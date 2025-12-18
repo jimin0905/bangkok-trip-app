@@ -88,7 +88,7 @@ export const ITINERARY_DATA: DayPlan[] = [
         category: "shopping",
         tags: [
             { label: "必逛:室內水上市場", type: "must-buy" },
-            { label: "必看:河濱水舞秀", type: "tip" }
+            { label: "必吃:鬼門炒河粉(Thipsamai)", type: "must-eat" }
         ]
       }
     ]
@@ -176,7 +176,10 @@ export const ITINERARY_DATA: DayPlan[] = [
         description: "Banthat Thong Road，各式道地泰式小吃自由選。",
         location: "Banthat Thong Road",
         category: "food",
-        tags: [{ label: "必吃:Jeh O Chula 媽媽麵", type: "must-eat" }, { label: "甜點:米其林豆漿", type: "must-eat" }]
+        tags: [
+          { label: "必吃:Jeh O Chula (媽媽麵)", type: "must-eat" }, 
+          { label: "甜點:Nueng Nom Nua (牛奶吐司)", type: "must-eat" }
+        ]
       }
     ]
   },
@@ -203,13 +206,13 @@ export const ITINERARY_DATA: DayPlan[] = [
         category: "shopping",
         tags: [
             { label: "必吃:Viva 8 海鮮飯", type: "must-eat" }, 
-            { label: "必吃:椰子冰淇淋", type: "must-eat" }
+            { label: "太熱可逛:Mixt Chatuchak", type: "tip" }
         ]
       },
       {
         time: "傍晚～晚上",
         title: "Dusit Central Park / Silom",
-        description: "探索曼谷新地標周邊。若商場未全開，可前往 Silom 覓食。",
+        description: "探索曼谷新地標周邊。若商場未全開，可前往 Silom 區 Saladaeng 覓食。",
         location: "Dusit Central Park",
         category: "sightseeing",
         tags: [{ label: "備選:The Commons Saladaeng", type: "tip" }]
@@ -251,10 +254,13 @@ export const ITINERARY_DATA: DayPlan[] = [
       {
         time: "機場購物",
         title: "免稅店採買",
-        description: "購買 PAÑPURI 香氛產品，價格通常較市區優惠。",
+        description: "1F Magic Food Point 有平價美食。免稅店可買 PAÑPURI 香氛。",
         location: "King Power Duty Free",
         category: "shopping",
-        tags: [{ label: "必買:PAÑPURI", type: "must-buy" }]
+        tags: [
+            { label: "必買:PAÑPURI", type: "must-buy" },
+            { label: "平價:Magic Food Point", type: "must-eat" }
+        ]
       }
     ]
   }
