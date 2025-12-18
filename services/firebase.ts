@@ -1,27 +1,31 @@
-import firebase from "firebase/compat/app";
-import "firebase/compat/database";
-import "firebase/compat/auth";
+import { initializeApp, FirebaseApp } from "firebase/app";
+import { getDatabase, ref, set, remove, update, onValue, off, Database } from "firebase/database";
+import { getAuth, signInAnonymously, onAuthStateChanged, Auth } from "firebase/auth";
 import { Expense } from "../types";
 
 // ==========================================
 // Firebase Config Initialization
 // ==========================================
 
-let firebaseConfig = null;
+let firebaseConfig: any = null;
 let rawConfig = '';
 
-// 1. Try to get VITE_FIREBASE_CONFIG statically
+// 1. Try to get VITE_FIREBASE_CONFIG safely
 try {
     // @ts-ignore
-    if (import.meta.env && import.meta.env.VITE_FIREBASE_CONFIG) {
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FIREBASE_CONFIG) {
         // @ts-ignore
         rawConfig = import.meta.env.VITE_FIREBASE_CONFIG;
     }
 } catch (e) {}
 
-// 2. Fallback to process.env
-if (!rawConfig && typeof process !== 'undefined' && process.env) {
-    rawConfig = process.env.VITE_FIREBASE_CONFIG || process.env.FIREBASE_CONFIG || '';
+// 2. Fallback to process.env safely
+if (!rawConfig) {
+    try {
+        if (typeof process !== 'undefined' && process.env) {
+            rawConfig = process.env.VITE_FIREBASE_CONFIG || process.env.FIREBASE_CONFIG || '';
+        }
+    } catch (e) {}
 }
 
 if (rawConfig) {
@@ -44,17 +48,20 @@ if (rawConfig) {
     }
 } else {
     // Fallback: Check individual fields
-    // @ts-ignore
-    const apiKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_API_KEY) || 
-                   (typeof process !== 'undefined' && process.env?.VITE_FIREBASE_API_KEY);
-                   
-    if (apiKey) {
-        const getVar = (key: string) => {
+    const getVar = (key: string) => {
+        try {
             // @ts-ignore
-            return (typeof import.meta !== 'undefined' && import.meta.env?.[`VITE_${key}`]) || 
-                   (typeof process !== 'undefined' && (process.env?.[`VITE_${key}`] || process.env?.[key]));
-        };
+            if (typeof import.meta !== 'undefined' && import.meta.env?.[`VITE_${key}`]) return import.meta.env[`VITE_${key}`];
+            // @ts-ignore
+            if (typeof process !== 'undefined' && process.env?.[`VITE_${key}`]) return process.env[`VITE_${key}`];
+            // @ts-ignore
+            if (typeof process !== 'undefined' && process.env?.[key]) return process.env[key];
+        } catch(e) {}
+        return undefined;
+    };
 
+    const apiKey = getVar('FIREBASE_API_KEY');
+    if (apiKey) {
         firebaseConfig = {
             apiKey: apiKey,
             authDomain: getVar('FIREBASE_AUTH_DOMAIN'),
@@ -67,21 +74,17 @@ if (rawConfig) {
     }
 }
 
-// Initialization Logic (Namespace API for compat/v8)
-let app: firebase.app.App;
-let db: firebase.database.Database;
-let auth: firebase.auth.Auth;
+// Initialization Logic (Modular API)
+let app: FirebaseApp | undefined;
+let db: Database | undefined;
+let auth: Auth | undefined;
 let isInitialized = false;
 
 try {
     if (firebaseConfig && (firebaseConfig.apiKey || firebaseConfig.databaseURL)) {
-        if (!firebase.apps.length) {
-            app = firebase.initializeApp(firebaseConfig);
-        } else {
-            app = firebase.app();
-        }
-        db = firebase.database();
-        auth = firebase.auth();
+        app = initializeApp(firebaseConfig);
+        db = getDatabase(app);
+        auth = getAuth(app);
         isInitialized = true;
     } else {
         console.warn("Firebase configuration missing or invalid. Sync disabled.");
@@ -91,8 +94,8 @@ try {
 }
 
 // 監聽驗證狀態 (Debug purpose)
-if (isInitialized && auth!) {
-    auth.onAuthStateChanged((user) => {
+if (isInitialized && auth) {
+    onAuthStateChanged(auth, (user) => {
         if (user) {
             console.log(`🔥 Firebase Auth Active: User is verified. (UID: ${user.uid.substring(0, 5)}...)`);
         } else {
@@ -109,13 +112,12 @@ const ensureAuth = async () => {
     
     try {
         console.log("🔒 Verifying identity with Firebase (Anonymous Auth)...");
-        const userCredential = await auth.signInAnonymously();
+        const userCredential = await signInAnonymously(auth);
         console.log("✅ Identity Verified! UID:", userCredential.user.uid);
         return userCredential.user;
     } catch (error: any) {
         if (error.code === 'auth/operation-not-allowed') {
             console.error("❌ CRITICAL ERROR: Anonymous auth is disabled in Firebase Console.");
-            console.error("👉 Please go to Firebase Console -> Authentication -> Sign-in method -> Enable Anonymous.");
             alert("請至 Firebase Console 啟用「匿名登入 (Anonymous Auth)」，否則無法同步資料。");
         } else {
             console.error("❌ Authentication Failed:", error);
@@ -152,24 +154,24 @@ export const syncService = {
 
     // Returns a PROMISE that resolves to the unsubscribe function
     subscribe: async (groupId: string, pin: string, onStatus: (status: string) => void, callback: (data: Expense[]) => void) => {
-        if (!isInitialized) {
+        if (!isInitialized || !db) {
             console.warn("Sync attempted but Firebase not ready.");
             return () => {};
         }
 
         try {
-            // 1. 驗證階段 (程式自動執行)
+            // 1. 驗證階段
             onStatus("🔒 正在驗證身份...");
             await ensureAuth(); 
 
             // 2. 加密路徑計算
             const path = await getSecurePath(groupId, pin);
-            const expensesRef = db.ref(path);
+            const expensesRef = ref(db, path);
             
             // 3. 資料同步
             onStatus("☁️ 正在下載資料...");
             
-            const listener = expensesRef.on('value', (snapshot) => {
+            const unsubscribe = onValue(expensesRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     const list = Object.values(data) as Expense[];
@@ -188,7 +190,7 @@ export const syncService = {
                 }
             });
 
-            return () => expensesRef.off('value', listener);
+            return () => off(expensesRef, 'value', unsubscribe);
         } catch (e) {
             console.error("Setup failed:", e);
             onStatus("❌ 驗證失敗 (請看 Console)");
@@ -197,21 +199,23 @@ export const syncService = {
     },
 
     addExpense: async (groupId: string, pin: string, expense: Expense) => {
-        if (!isInitialized) return;
+        if (!isInitialized || !db) return;
         await ensureAuth();
         const path = await getSecurePath(groupId, pin);
-        await db.ref(`${path}/${expense.id}`).set(expense);
+        const itemRef = ref(db, `${path}/${expense.id}`);
+        await set(itemRef, expense);
     },
 
     deleteExpense: async (groupId: string, pin: string, expenseId: string) => {
-        if (!isInitialized) return;
+        if (!isInitialized || !db) return;
         await ensureAuth();
         const path = await getSecurePath(groupId, pin);
-        await db.ref(`${path}/${expenseId}`).remove();
+        const itemRef = ref(db, `${path}/${expenseId}`);
+        await remove(itemRef);
     },
 
     settleExpenses: async (groupId: string, pin: string, expenseIds: string[]) => {
-        if (!isInitialized) return;
+        if (!isInitialized || !db) return;
         await ensureAuth();
         const path = await getSecurePath(groupId, pin);
         const updates: Record<string, any> = {};
@@ -220,6 +224,6 @@ export const syncService = {
             updates[`${path}/${id}/isSettled`] = true;
         });
 
-        await db.ref().update(updates);
+        await update(ref(db), updates);
     }
 };

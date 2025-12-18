@@ -1,3 +1,4 @@
+
 export type ActivityCategory = 'sightseeing' | 'food' | 'shopping' | 'transport' | 'relax' | 'other';
 
 export interface SmartTag {
@@ -19,6 +20,8 @@ export interface DayPlan {
   dateLabel: string;
   title: string;
   subtitle: string;
+  image: string; // Specific image URL for the day
+  imgPos?: string; // CSS object-position value (e.g., 'center 20%')
   activities: Activity[];
 }
 

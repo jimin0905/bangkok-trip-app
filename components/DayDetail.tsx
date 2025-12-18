@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DayPlan, ActivityCategory, SmartTag } from '../types';
-import { ArrowLeft, MapPin, Clock, Utensils, Camera, ShoppingBag, Bus, CloudSun, Navigation, Sparkles } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Utensils, Camera, ShoppingBag, Bus, CloudSun, ImageOff } from 'lucide-react';
 
 interface Props {
   plan: DayPlan;
@@ -31,7 +31,7 @@ const TagBadge: React.FC<{ tag: SmartTag }> = ({ tag }) => {
     );
 };
 
-// Updated weather data for Dec 2025: 12/24 - 12/29
+// Weather data for Dec 24 - Dec 29
 const getWeatherForecast = (dayId: number) => {
     switch(dayId) {
         case 1: return "☀️ 12/24 (三) 晴時多雲，24-32°C。平安夜抵達，天氣舒適，適合短袖搭配薄外套。";
@@ -45,7 +45,7 @@ const getWeatherForecast = (dayId: number) => {
 };
 
 const DayDetail: React.FC<Props> = ({ plan, onBack }) => {
-  const imageUrl = `https://picsum.photos/seed/bkk${plan.id}/800/600`;
+  const [imgError, setImgError] = useState(false);
   const weatherInfo = getWeatherForecast(plan.id);
 
   return (
@@ -64,14 +64,23 @@ const DayDetail: React.FC<Props> = ({ plan, onBack }) => {
         <div className="w-10" /> {/* Spacer */}
       </div>
 
-      {/* Hero Image - Smaller, Cinematic */}
+      {/* Hero Image */}
       <div className="px-4 mt-4">
-        <div className="relative h-48 sm:h-64 w-full rounded-2xl overflow-hidden shadow-sm">
-            <img 
-                src={imageUrl} 
-                alt={plan.title} 
-                className="w-full h-full object-cover grayscale-[10%]"
-            />
+        <div className="relative h-48 sm:h-64 w-full rounded-2xl overflow-hidden shadow-sm bg-stone-200">
+            {!imgError ? (
+                <img 
+                    src={plan.image} 
+                    alt={plan.title} 
+                    onError={() => setImgError(true)}
+                    style={{ objectPosition: plan.imgPos || 'center' }}
+                    className="w-full h-full object-cover grayscale-[10%]"
+                />
+            ) : (
+                <div className="w-full h-full flex items-center justify-center flex-col text-stone-400 gap-2">
+                    <ImageOff size={32} opacity={0.5} />
+                    <span className="text-xs font-medium">Image not available</span>
+                </div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
             <div className="absolute bottom-4 left-4 text-white">
                 <h1 className="text-2xl font-bold tracking-wide">{plan.title}</h1>

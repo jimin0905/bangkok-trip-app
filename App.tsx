@@ -4,70 +4,84 @@ import { DayPlan, ViewState } from './types';
 import ItineraryCard from './components/ItineraryCard';
 import DayDetail from './components/DayDetail';
 import ExpenseTracker from './components/ExpenseTracker';
-import { MapPin } from 'lucide-react';
 
 const App: React.FC = () => {
   const [viewState, setViewState] = useState<ViewState>(ViewState.LIST);
   const [selectedDay, setSelectedDay] = useState<DayPlan | null>(null);
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
 
-  // 監聽瀏覽器的「上一頁」動作 (包含手機滑動手勢)
+  // Handle browser back button
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
-      // Layer 1: Expense Tracker (Topmost)
-      // 如果記帳頁面開著，優先只關閉記帳頁面
+      // 1. Close Expense Tracker if open
       if (isExpenseOpen) {
         setIsExpenseOpen(false);
-        return; 
+        return;
       }
-
-      // Layer 2: Day Detail
-      // 如果記帳頁面沒開，但詳情頁開著，則關閉詳情頁
+      // 2. Return to List if in Detail view
       if (viewState === ViewState.DETAIL) {
         setViewState(ViewState.LIST);
-        setTimeout(() => setSelectedDay(null), 300); // 動畫結束後清除資料
+        setSelectedDay(null); // Clear immediately for snappier feel
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isExpenseOpen, viewState]); // 依賴項很重要，確保讀取到最新的 state
+  }, [isExpenseOpen, viewState]);
+
+  // Safe history push wrapper
+  const safePushState = (state: any, hash: string) => {
+    try {
+        // Try standard push with hash
+        window.history.pushState(state, '', hash);
+    } catch (e) {
+        console.warn("History push with URL failed, retrying without URL:", e);
+        try {
+            // Fallback: push state without URL (works in blob/sandboxed envs)
+            window.history.pushState(state, '', null);
+        } catch (e2) {
+            console.error("History API unavailable:", e2);
+        }
+    }
+  };
 
   const handleDayClick = (day: DayPlan) => {
-    // 告訴瀏覽器：「我們進入下一頁囉」
-    window.history.pushState({ view: 'detail', dayId: day.id }, '', `#day${day.id}`);
-    
+    // 1. Update React state FIRST to ensure UI responsiveness regardless of history API status
     setSelectedDay(day);
     setViewState(ViewState.DETAIL);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
+
+    // 2. Push state to history safely
+    safePushState({ view: 'detail', dayId: day.id }, `#day${day.id}`);
   };
 
   const handleBack = () => {
-    // 點擊 UI 返回按鈕時，呼叫 browser back 觸發 popstate
+    // If history API is working, this triggers popstate.
+    // In extremely restricted envs where pushState completely fails, this might exit app,
+    // but the fallback in safePushState usually prevents that.
     window.history.back();
   };
 
-  // 記帳本 History 邏輯
   const openExpenseTracker = () => {
-    window.history.pushState({ view: 'expense' }, '', '#expenses');
+    // Update state first
     setIsExpenseOpen(true);
+    // Then history
+    safePushState({ view: 'expense' }, '#expenses');
   };
 
   const closeExpenseTracker = () => {
-    // 點擊關閉按鈕時，呼叫 browser back
-    // 這會觸發上面的 popstate，進而執行 setIsExpenseOpen(false)
     window.history.back();
   };
 
   return (
-    <div className="min-h-screen font-sans text-stone-800">
-      {/* Minimalist Header */}
+    <div className="min-h-screen font-sans text-stone-800 bg-[#F9F9F7]">
+      {/* Header - Only visible in List View */}
       {viewState === ViewState.LIST && (
-        <header className="sticky top-0 z-30 bg-[#F9F9F7]/90 backdrop-blur-sm border-b border-gray-100">
+        <header className="sticky top-0 z-30 bg-[#F9F9F7]/95 backdrop-blur-sm border-b border-gray-100/50">
             <div className="max-w-2xl mx-auto px-6 h-20 flex items-center justify-center relative">
             <div className="flex flex-col items-center">
                 <span className="text-[10px] uppercase tracking-[0.2em] text-stone-400 mb-1">Travel Guide</span>
-                <h1 className="text-xl font-bold text-stone-800 tracking-wide">
+                <h1 className="text-xl font-bold text-stone-800 tracking-wide font-serif">
                 BANGKOK BLISS
                 </h1>
             </div>
@@ -75,7 +89,7 @@ const App: React.FC = () => {
         </header>
       )}
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main className="max-w-2xl mx-auto min-h-[calc(100vh-80px)]">
         {viewState === ViewState.LIST ? (
           <div className="px-6 py-8 animate-fade-in">
@@ -85,7 +99,7 @@ const App: React.FC = () => {
                 </p>
              </div>
             
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 gap-6 pb-20">
               {ITINERARY_DATA.map((day) => (
                 <ItineraryCard
                   key={day.id}
@@ -95,7 +109,7 @@ const App: React.FC = () => {
               ))}
             </div>
             
-            <div className="mt-16 text-center">
+            <div className="mt-8 text-center pb-8">
                 <div className="w-8 h-px bg-stone-300 mx-auto mb-4"></div>
                 <p className="text-[10px] text-stone-400 uppercase tracking-widest">
                     Design by Gemini • 2025
@@ -112,7 +126,7 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Expense Tracker */}
+      {/* Expense Tracker Overlay */}
       <ExpenseTracker 
         isOpen={isExpenseOpen}
         onRequestOpen={openExpenseTracker}

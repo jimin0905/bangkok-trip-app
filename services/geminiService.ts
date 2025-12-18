@@ -1,10 +1,22 @@
 import { GoogleGenAI } from "@google/genai";
 import { ITINERARY_DATA } from '../constants';
 
+// Safely get env var
+const getApiKey = () => {
+    try {
+        if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+            return process.env.API_KEY;
+        }
+    } catch (e) {}
+    return null;
+};
+
 // Initialize selectively to prevent crashes if key is missing
 let ai: GoogleGenAI | null = null;
-if (process.env.API_KEY) {
-    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKey = getApiKey();
+
+if (apiKey) {
+    ai = new GoogleGenAI({ apiKey });
 } else {
     console.warn("Gemini API Key missing. AI features will be disabled.");
 }

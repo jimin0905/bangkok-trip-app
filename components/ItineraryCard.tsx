@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DayPlan } from '../types';
-import { Calendar, ChevronRight } from 'lucide-react';
+import { Calendar, ChevronRight, ImageOff } from 'lucide-react';
 
 interface Props {
   plan: DayPlan;
@@ -8,21 +8,32 @@ interface Props {
 }
 
 const ItineraryCard: React.FC<Props> = ({ plan, onClick }) => {
-  const imageUrl = `https://picsum.photos/seed/bkk${plan.id}/600/400`;
+  const [imgError, setImgError] = useState(false);
 
   return (
     <div 
       onClick={onClick}
-      className="group cursor-pointer bg-white rounded-xl overflow-hidden border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-500 flex flex-col h-full"
+      className="group cursor-pointer bg-white rounded-xl overflow-hidden border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-500 flex flex-col h-full relative"
     >
-      {/* Image Section - Reduced height for minimalist feel */}
-      <div className="relative h-40 overflow-hidden">
+      {/* Image Section */}
+      <div className="relative h-40 overflow-hidden bg-stone-100">
         <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500 z-10" />
-        <img 
-          src={imageUrl} 
-          alt={plan.title} 
-          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 grayscale-[20%] group-hover:grayscale-0"
-        />
+        
+        {!imgError ? (
+          <img 
+            src={plan.image} 
+            alt={plan.title} 
+            loading="lazy"
+            onError={() => setImgError(true)}
+            style={{ objectPosition: plan.imgPos || 'center' }}
+            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 grayscale-[20%] group-hover:grayscale-0"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-stone-200 text-stone-400">
+             <ImageOff size={24} opacity={0.5} />
+          </div>
+        )}
+
         <div className="absolute top-3 left-3 z-20">
              <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-sm text-xs font-serif tracking-widest text-gray-800 shadow-sm">
                 {plan.dateLabel}

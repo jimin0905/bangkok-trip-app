@@ -4,14 +4,18 @@ export const ITINERARY_DATA: DayPlan[] = [
   {
     id: 1,
     dateLabel: "Day 1 • 12/24 (三)",
-    title: "抵達曼谷与河畔饗宴",
+    title: "抵達曼谷與河畔饗宴",
     subtitle: "抵達日｜平安夜大餐",
+    // Image: Luxury Dining / Night View
+    // imgPos: 'center 25%' means center horizontally, show the top 25% vertically (pulling image down to reveal top)
+    image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=800&q=80",
+    imgPos: "center 30%", 
     activities: [
       {
         time: "下午",
-        title: "抵達 BKK / DMK 機場",
+        title: "抵達 DMK 廊曼機場",
         description: "前往飯店入住或寄放行李",
-        location: "Bangkok Suvarnabhumi Airport",
+        location: "Don Mueang International Airport",
         category: "transport",
         tags: [{ label: "Grab叫車", type: "tip" }]
       },
@@ -40,6 +44,10 @@ export const ITINERARY_DATA: DayPlan[] = [
     dateLabel: "Day 2 • 12/25 (四)",
     title: "河岸文化巡禮",
     subtitle: "聖誕節古蹟巡禮",
+    // Image: Wat Arun Details
+    // Adjusted to 70% to show the body of the monument instead of the sky/spire tip
+    image: "https://images.unsplash.com/photo-1563492065599-3520f775eeed?auto=format&fit=crop&w=800&q=80",
+    imgPos: "center 70%",
     activities: [
       {
         time: "早上",
@@ -90,6 +98,9 @@ export const ITINERARY_DATA: DayPlan[] = [
     dateLabel: "Day 3 • 12/26 (五)",
     title: "精緻美食與購物",
     subtitle: "米其林與百貨巡禮",
+    // Image: Tom Yum / Thai Food (Show more of the bowl)
+    image: "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=800&q=80",
+    imgPos: "center 40%",
     activities: [
       {
         time: "中午",
@@ -126,6 +137,9 @@ export const ITINERARY_DATA: DayPlan[] = [
     dateLabel: "Day 4 • 12/27 (六)",
     title: "文青咖啡與暹羅商圈",
     subtitle: "週末Chill＋美食重點日",
+    // Image: Coffee / Cafe - Updated to a reliable URL
+    image: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=800&q=80",
+    imgPos: "center center",
     activities: [
       {
         time: "上午",
@@ -162,6 +176,9 @@ export const ITINERARY_DATA: DayPlan[] = [
     dateLabel: "Day 5 • 12/28 (日)",
     title: "恰圖恰與新地標",
     subtitle: "週末市集最終場",
+    // Image: Market Vibe
+    image: "https://images.unsplash.com/photo-1519098901909-b1553a1190af?auto=format&fit=crop&w=800&q=80",
+    imgPos: "center 40%",
     activities: [
       {
         time: "上午",
@@ -198,6 +215,10 @@ export const ITINERARY_DATA: DayPlan[] = [
     dateLabel: "Day 6 • 12/29 (一)",
     title: "告別曼谷",
     subtitle: "收尾日",
+    // Image: Travel / Plane
+    // Adjusted to 65% to show more of the wing (lower part of image)
+    image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80",
+    imgPos: "center 65%",
     activities: [
       {
         time: "早上",
@@ -207,8 +228,8 @@ export const ITINERARY_DATA: DayPlan[] = [
       },
       {
         time: "下午",
-        title: "前往機場",
-        description: "預留充足時間前往 BKK 或 DMK。",
+        title: "前往 BKK 素萬那普機場",
+        description: "預留充足時間辦理退稅與登機。",
         location: "Suvarnabhumi Airport",
         category: "transport",
         tags: [{ label: "建議提早3小時", type: "tip" }]
