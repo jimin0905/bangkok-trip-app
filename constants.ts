@@ -97,7 +97,7 @@ export const ITINERARY_DATA: DayPlan[] = [
     id: 3,
     dateLabel: "Day 3 • 12/26 (五)",
     title: "精緻美食與購物",
-    subtitle: "米其林與百貨巡禮",
+    subtitle: "CentralWorld 男裝與美食攻略",
     // Image: Tom Yum / Thai Food (Show more of the bowl)
     image: "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=800&q=80",
     imgPos: "center 40%",
@@ -111,24 +111,29 @@ export const ITINERARY_DATA: DayPlan[] = [
         tags: [{ label: "需預約", type: "reservation" }, { label: "經典:黃咖哩", type: "must-eat" }]
       },
       {
-        time: "下午～晚上",
+        time: "下午",
         title: "CentralWorld 深度購物",
-        description: "曼谷最大的購物中心之一，集結各大香氛品牌與裝置藝術。",
+        description: "曼谷最大商場。推薦 2F Beacon Zone (男裝/潮牌重鎮)。",
         location: "centralwOrld",
         category: "shopping",
         tags: [
-          { label: "必買:Butterfly Thai Perfume 芒果糯米飯味", type: "must-buy" },
-          { label: "必逛:Karmakamet", type: "must-buy" },
-          { label: "必逛:PAÑPURI", type: "must-buy" },
-          { label: "選物:Frank Garçon", type: "must-buy" }
+          { label: "潮牌:Carnival (必逛)", type: "must-buy" },
+          { label: "機能:Element 72 (Keen)", type: "must-buy" },
+          { label: "設計:Good Goods", type: "must-buy" },
+          { label: "香氛:Karmakamet", type: "must-buy" }
         ]
       },
       {
         time: "晚餐",
-        title: "CentralWorld 內享用晚餐",
-        description: "商場內有多樣化的餐廳選擇。",
+        title: "CentralWorld 美食推薦",
+        description: "推薦 3F/6F/7F 餐廳區。",
         location: "centralwOrld",
         category: "food",
+        tags: [
+            { label: "必吃:Thong Smith (和牛船麵)", type: "must-eat" },
+            { label: "必吃:Kub Kao Kub Pla (綠咖哩)", type: "must-eat" },
+            { label: "甜點:After You 刨冰", type: "must-eat" }
+        ]
       }
     ]
   },
@@ -136,7 +141,7 @@ export const ITINERARY_DATA: DayPlan[] = [
     id: 4,
     dateLabel: "Day 4 • 12/27 (六)",
     title: "文青咖啡與暹羅商圈",
-    subtitle: "週末Chill＋美食重點日",
+    subtitle: "Siam Square 潮流挖掘",
     // Image: Coffee / Cafe
     image: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=800&q=80",
     imgPos: "center center",
@@ -155,11 +160,15 @@ export const ITINERARY_DATA: DayPlan[] = [
       },
       {
         time: "下午",
-        title: "Siam 商圈漫步",
-        description: "Siam Square / Siam Center。主打年輕品牌與日韓風格購物。",
+        title: "Siam Square 逛街攻略",
+        description: "年輕人的潮流聖地。主攻 Siam Square One 與周邊巷弄。",
         location: "Siam Square One",
         category: "shopping",
-        tags: [{ label: "年輕潮牌", type: "tip" }]
+        tags: [
+            { label: "必逛:Frank Garçon (選物)", type: "must-buy" },
+            { label: "必逛:Lido Connect", type: "must-buy" },
+            { label: "潮牌:A.S.S (Siam Center)", type: "tip" }
+        ]
       },
       {
         time: "晚上",
@@ -189,24 +198,29 @@ export const ITINERARY_DATA: DayPlan[] = [
       {
         time: "下午",
         title: "恰圖恰週末市集 Chatuchak",
-        description: "世界最大的週末市集（週日有開，把握最後採買機會）。",
+        description: "世界最大的週末市集。男生主攻 Section 2, 3, 4 (古著/風格服飾)。",
         location: "Chatuchak Weekend Market",
         category: "shopping",
-        tags: [{ label: "注意:只開週末", type: "tip" }, { label: "必吃:椰子冰淇淋", type: "must-eat" }]
+        tags: [
+            { label: "必吃:Viva 8 海鮮飯", type: "must-eat" }, 
+            { label: "必吃:椰子冰淇淋", type: "must-eat" }
+        ]
       },
       {
         time: "傍晚～晚上",
-        title: "Dusit Central Park",
-        description: "探索曼谷的新興綜合開發區。",
+        title: "Dusit Central Park / Silom",
+        description: "探索曼谷新地標周邊。若商場未全開，可前往 Silom 覓食。",
         location: "Dusit Central Park",
         category: "sightseeing",
+        tags: [{ label: "備選:The Commons Saladaeng", type: "tip" }]
       },
       {
         time: "晚餐",
-        title: "商場內晚餐",
-        description: "於 Dusit Central Park 內解決。",
-        location: "Dusit Central Park",
+        title: "Somboon Seafood 建興酒家",
+        description: "經典咖哩蟹，適合最後一晚的豐盛晚餐 (Surawong 分店)。",
+        location: "Somboon Seafood Surawong",
         category: "food",
+        tags: [{ label: "經典:咖哩蟹", type: "must-eat" }, { label: "必點:蒜泥炸蝦", type: "must-eat" }]
       }
     ]
   },
