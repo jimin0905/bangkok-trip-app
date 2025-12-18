@@ -146,13 +146,13 @@ const DayDetail: React.FC<Props> = ({ plan, onBack }) => {
                     {activity.location && (
                         <div className="border-t border-stone-50 pt-3 flex justify-end">
                             <a 
-                                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(activity.location)}`}
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.location)}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-white text-xs rounded-full transition-all shadow-sm active:scale-95"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-600 text-xs rounded-full transition-all shadow-sm active:scale-95"
                             >
-                                <Navigation size={12} />
-                                <span>導航</span>
+                                <MapPin size={12} />
+                                <span>查看地圖</span>
                             </a>
                         </div>
                     )}

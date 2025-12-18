@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Wallet, Plus, X, Trash2, ShoppingBag, Utensils, Bus, MoreHorizontal, Cloud, CloudOff, Lock, LogIn, User, CheckCircle2, ArrowRightLeft, Users, Gift, UserCircle, Calculator, Filter, ListFilter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Wallet, Plus, X, Trash2, ShoppingBag, Utensils, Bus, MoreHorizontal, Cloud, CloudOff, LogOut, LogIn, User, CheckCircle2, ArrowRightLeft, Users, Gift, UserCircle, Calculator, Filter, ListFilter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Expense } from '../types';
 import { syncService } from '../services/firebase';
 
@@ -65,6 +65,9 @@ const ExpenseTracker: React.FC = () => {
             if (g && p) {
                 setGroupId(g);
                 setPin(p);
+                // Also pre-fill the form inputs so they are ready if user logs out
+                setTempGroupId(g);
+                setTempPin(p);
                 setIsSyncMode(true);
             }
         } catch (e) {}
@@ -98,10 +101,14 @@ const ExpenseTracker: React.FC = () => {
   };
 
   const handleLogout = () => {
+      const confirmLogout = window.confirm("確定要登出同步模式嗎？");
+      if (!confirmLogout) return;
+
       setIsSyncMode(false);
       setGroupId('');
       setPin('');
       localStorage.removeItem('bkk_sync_session');
+      // Note: We do NOT clear tempGroupId/tempPin here, so user can easily log back in if needed.
       const savedLocal = localStorage.getItem('bkk_expenses_2025');
       if (savedLocal) setExpenses(JSON.parse(savedLocal));
       else setExpenses([]);
@@ -235,7 +242,7 @@ const ExpenseTracker: React.FC = () => {
                       {isSyncMode ? (
                           <div className="flex items-center gap-1 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
                               <Cloud size={10} className="text-emerald-300" />
-                              <span className="text-[9px] font-bold text-emerald-300">SYNC ON</span>
+                              <span className="text-[9px] font-bold text-emerald-300">SYNC: {groupId}</span>
                           </div>
                       ) : (
                           <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
@@ -256,8 +263,8 @@ const ExpenseTracker: React.FC = () => {
                           <CloudOff size={20} />
                       </button>
                   ) : (
-                      <button onClick={handleLogout} className="p-2 rounded-full bg-white/10 hover:bg-red-500/50 text-white transition-colors">
-                          <Lock size={20} />
+                      <button onClick={handleLogout} className="p-2 rounded-full bg-red-500/20 hover:bg-red-500/40 text-red-200 hover:text-white transition-colors border border-red-500/20" title="登出 (Logout)">
+                          <LogOut size={20} />
                       </button>
                   )}
                   <button onClick={() => setIsOpen(false)} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors text-white">
@@ -326,7 +333,7 @@ const ExpenseTracker: React.FC = () => {
                     </div>
                     {firebaseError && (
                          <div className="mb-3 p-2 bg-red-50 text-red-600 text-xs rounded border border-red-100">
-                            Firebase 設定未完成。
+                            Firebase 設定未完成。請檢查環境變數 (FIREBASE_CONFIG) 或瀏覽器 Console。
                          </div>
                     )}
                     <div className="space-y-3">

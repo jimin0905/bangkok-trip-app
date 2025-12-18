@@ -4,63 +4,103 @@ import { Expense } from "../types";
 
 // ==========================================
 // Firebase Config Initialization
-// Supports simplified setup via a single JSON string
 // ==========================================
 
 let firebaseConfig = null;
+let rawConfig = '';
 
-// Option 1: Try parsing the single JSON string (Easiest for Vercel)
-if (process.env.FIREBASE_CONFIG) {
-    try {
-        firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
-    } catch (e) {
-        console.error("Failed to parse FIREBASE_CONFIG environment variable.");
+// Helper to safely get env vars
+const getEnv = (key: string) => {
+    // 1. Try standard process.env (Node/Webpack/Vite with define)
+    if (typeof process !== 'undefined' && process.env && process.env[key]) {
+        return process.env[key];
     }
-}
+    // 2. Try Vite's import.meta.env
+    try {
+        // @ts-ignore
+        if (import.meta && import.meta.env && import.meta.env[key]) {
+             // @ts-ignore
+             return import.meta.env[key];
+        }
+    } catch (e) {}
+    return null;
+};
 
-// Option 2: Fallback to individual variables if JSON is not present
-if (!firebaseConfig) {
-    firebaseConfig = {
-        apiKey: process.env.FIREBASE_API_KEY,
-        authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-        databaseURL: process.env.FIREBASE_DATABASE_URL,
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.FIREBASE_APP_ID
-    };
+// Try to find the config string
+rawConfig = getEnv('FIREBASE_CONFIG') || getEnv('VITE_FIREBASE_CONFIG') || '';
+
+if (rawConfig) {
+    try {
+        // Clean up the string if it has wrapping quotes (common .env issue)
+        let cleanConfig = rawConfig.trim();
+        if (cleanConfig.startsWith("'") && cleanConfig.endsWith("'")) {
+            cleanConfig = cleanConfig.slice(1, -1);
+        }
+        if (cleanConfig.startsWith('"') && cleanConfig.endsWith('"')) {
+            cleanConfig = cleanConfig.slice(1, -1);
+        }
+        
+        firebaseConfig = JSON.parse(cleanConfig);
+        console.log("Firebase config parsed successfully.");
+    } catch (e) {
+        console.error("Firebase Config Error: Failed to parse JSON.", e);
+        console.error("Raw Config received:", rawConfig); // Help user debug
+    }
+} else {
+    // Fallback: Check individual fields
+    const apiKey = getEnv('FIREBASE_API_KEY') || getEnv('VITE_FIREBASE_API_KEY');
+    if (apiKey) {
+        firebaseConfig = {
+            apiKey: apiKey,
+            authDomain: getEnv('FIREBASE_AUTH_DOMAIN') || getEnv('VITE_FIREBASE_AUTH_DOMAIN'),
+            databaseURL: getEnv('FIREBASE_DATABASE_URL') || getEnv('VITE_FIREBASE_DATABASE_URL'),
+            projectId: getEnv('FIREBASE_PROJECT_ID') || getEnv('VITE_FIREBASE_PROJECT_ID'),
+            storageBucket: getEnv('FIREBASE_STORAGE_BUCKET') || getEnv('VITE_FIREBASE_STORAGE_BUCKET'),
+            messagingSenderId: getEnv('FIREBASE_MESSAGING_SENDER_ID') || getEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
+            appId: getEnv('FIREBASE_APP_ID') || getEnv('VITE_FIREBASE_APP_ID')
+        };
+    }
 }
 
 let app;
 let db: Database;
 let isInitialized = false;
 
-// Initialize conditionally to avoid errors if config is missing
 try {
-    // Basic check: databaseURL is the most critical for this app
     if (firebaseConfig && (firebaseConfig.apiKey || firebaseConfig.databaseURL)) {
         app = initializeApp(firebaseConfig);
         db = getDatabase(app);
         isInitialized = true;
     } else {
-        console.warn("Firebase configuration not found. Sync disabled.");
+        console.warn("Firebase configuration missing or invalid. Sync disabled.");
     }
 } catch (e) {
-    console.error("Firebase init failed:", e);
+    console.error("Firebase initialization failed:", e);
 }
 
 // Generate a secure-ish path based on Group ID and PIN
 const getPath = (groupId: string, pin: string) => {
     const raw = `${groupId.trim()}_${pin.trim()}`;
-    const hash = btoa(encodeURIComponent(raw)); 
-    return `trips/${hash}/expenses`;
+    // Simple hash to avoid plain text paths
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+        const char = raw.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    // Use a clean alphanumeric string
+    const safeHash = Math.abs(hash).toString(36) + raw.length.toString(36);
+    return `trips/${safeHash}/expenses`;
 };
 
 export const syncService = {
     isReady: () => isInitialized,
 
     subscribe: (groupId: string, pin: string, callback: (data: Expense[]) => void) => {
-        if (!isInitialized) return () => {};
+        if (!isInitialized) {
+            console.warn("Sync attempted but Firebase not ready.");
+            return () => {};
+        }
         
         const expensesRef = ref(db, getPath(groupId, pin));
         
