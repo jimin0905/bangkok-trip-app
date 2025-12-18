@@ -9,22 +9,32 @@ import { MapPin } from 'lucide-react';
 const App: React.FC = () => {
   const [viewState, setViewState] = useState<ViewState>(ViewState.LIST);
   const [selectedDay, setSelectedDay] = useState<DayPlan | null>(null);
+  const [isExpenseOpen, setIsExpenseOpen] = useState(false);
 
   // 監聽瀏覽器的「上一頁」動作 (包含手機滑動手勢)
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
-      // 如果瀏覽器退回了，我們強制切回列表模式
-      setViewState(ViewState.LIST);
-      setTimeout(() => setSelectedDay(null), 300); // 動畫結束後清除資料
+      // Layer 1: Expense Tracker (Topmost)
+      // 如果記帳頁面開著，優先只關閉記帳頁面
+      if (isExpenseOpen) {
+        setIsExpenseOpen(false);
+        return; 
+      }
+
+      // Layer 2: Day Detail
+      // 如果記帳頁面沒開，但詳情頁開著，則關閉詳情頁
+      if (viewState === ViewState.DETAIL) {
+        setViewState(ViewState.LIST);
+        setTimeout(() => setSelectedDay(null), 300); // 動畫結束後清除資料
+      }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [isExpenseOpen, viewState]); // 依賴項很重要，確保讀取到最新的 state
 
   const handleDayClick = (day: DayPlan) => {
     // 告訴瀏覽器：「我們進入下一頁囉」
-    // 這會增加一筆歷史紀錄，讓手機的「上一頁」手勢生效
     window.history.pushState({ view: 'detail', dayId: day.id }, '', `#day${day.id}`);
     
     setSelectedDay(day);
@@ -33,9 +43,19 @@ const App: React.FC = () => {
   };
 
   const handleBack = () => {
-    // 當使用者點擊 UI 上的「返回按鈕」時
-    // 我們呼叫瀏覽器的 back，這會觸發上面的 popstate 事件
-    // 這樣邏輯才會統一
+    // 點擊 UI 返回按鈕時，呼叫 browser back 觸發 popstate
+    window.history.back();
+  };
+
+  // 記帳本 History 邏輯
+  const openExpenseTracker = () => {
+    window.history.pushState({ view: 'expense' }, '', '#expenses');
+    setIsExpenseOpen(true);
+  };
+
+  const closeExpenseTracker = () => {
+    // 點擊關閉按鈕時，呼叫 browser back
+    // 這會觸發上面的 popstate，進而執行 setIsExpenseOpen(false)
     window.history.back();
   };
 
@@ -93,7 +113,11 @@ const App: React.FC = () => {
       </main>
 
       {/* Expense Tracker */}
-      <ExpenseTracker />
+      <ExpenseTracker 
+        isOpen={isExpenseOpen}
+        onRequestOpen={openExpenseTracker}
+        onRequestClose={closeExpenseTracker}
+      />
     </div>
   );
 };

@@ -16,8 +16,13 @@ const USER_NAMES = {
   B: 'Simon'
 };
 
-const ExpenseTracker: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface Props {
+    isOpen: boolean;
+    onRequestOpen: () => void;
+    onRequestClose: () => void;
+}
+
+const ExpenseTracker: React.FC<Props> = ({ isOpen, onRequestOpen, onRequestClose }) => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   
   // Sync State
@@ -249,7 +254,7 @@ const ExpenseTracker: React.FC = () => {
   return (
     <>
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={onRequestOpen}
         className={`fixed bottom-8 right-6 z-50 bg-stone-800 text-white p-4 rounded-full shadow-[0_8px_20px_rgba(0,0,0,0.3)] hover:bg-stone-700 active:scale-95 transition-all duration-300 ${isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
         aria-label="Open Expense Tracker"
       >
@@ -295,7 +300,7 @@ const ExpenseTracker: React.FC = () => {
                           <LogOut size={20} />
                       </button>
                   )}
-                  <button onClick={() => setIsOpen(false)} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors text-white">
+                  <button onClick={onRequestClose} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors text-white">
                       <X size={20} />
                   </button>
               </div>
@@ -543,7 +548,7 @@ const ExpenseTracker: React.FC = () => {
         </div>
       </div>
       
-      {isOpen && <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-[2px] z-40" onClick={() => setIsOpen(false)} />}
+      {isOpen && <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-[2px] z-40" onClick={onRequestClose} />}
     </>
   );
 };

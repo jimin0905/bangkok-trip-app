@@ -3,9 +3,9 @@ import { DayPlan } from './types';
 export const ITINERARY_DATA: DayPlan[] = [
   {
     id: 1,
-    dateLabel: "Day 1",
+    dateLabel: "Day 1 • 12/24 (三)",
     title: "抵達曼谷与河畔饗宴",
-    subtitle: "抵達日輕鬆走",
+    subtitle: "抵達日｜平安夜大餐",
     activities: [
       {
         time: "下午",
@@ -18,7 +18,7 @@ export const ITINERARY_DATA: DayPlan[] = [
       {
         time: "晚上",
         title: "Copper Beyond Buffet",
-        description: "曼谷著名的自助餐饗宴，和牛船麵與松露湯是必點。",
+        description: "曼谷著名的自助餐饗宴，和牛船麵與松露湯是必點。平安夜享受奢華美食。",
         location: "Copper Beyond Buffet",
         category: "food",
         tags: [
@@ -37,9 +37,9 @@ export const ITINERARY_DATA: DayPlan[] = [
   },
   {
     id: 2,
-    dateLabel: "Day 2",
+    dateLabel: "Day 2 • 12/25 (四)",
     title: "河岸文化巡禮",
-    subtitle: "最順的河岸文化動線",
+    subtitle: "聖誕節古蹟巡禮",
     activities: [
       {
         time: "早上",
@@ -75,7 +75,7 @@ export const ITINERARY_DATA: DayPlan[] = [
       {
         time: "晚上",
         title: "ICONSIAM 暹羅天地",
-        description: "用餐、逛水上市場區域、欣賞河景。",
+        description: "在河畔享用聖誕晚餐、欣賞水舞秀與華麗裝飾。",
         location: "ICONSIAM",
         category: "shopping",
         tags: [
@@ -87,14 +87,14 @@ export const ITINERARY_DATA: DayPlan[] = [
   },
   {
     id: 3,
-    dateLabel: "Day 3",
+    dateLabel: "Day 3 • 12/26 (五)",
     title: "精緻美食與購物",
-    subtitle: "你指定的重點購物日",
+    subtitle: "米其林與百貨巡禮",
     activities: [
       {
         time: "中午",
         title: "藍象餐廳 Blue Elephant",
-        description: "米其林推薦的皇家泰式料理。",
+        description: "米其林推薦的皇家泰式料理，享受精緻午宴。",
         location: "Blue Elephant Cooking School & Restaurant Bangkok",
         category: "food",
         tags: [{ label: "需預約", type: "reservation" }, { label: "經典:黃咖哩", type: "must-eat" }]
@@ -102,7 +102,7 @@ export const ITINERARY_DATA: DayPlan[] = [
       {
         time: "下午～晚上",
         title: "CentralWorld 深度購物",
-        description: "曼谷最大的購物中心之一，集結各大香氛品牌。",
+        description: "曼谷最大的購物中心之一，集結各大香氛品牌與裝置藝術。",
         location: "centralwOrld",
         category: "shopping",
         tags: [
@@ -123,9 +123,9 @@ export const ITINERARY_DATA: DayPlan[] = [
   },
   {
     id: 4,
-    dateLabel: "Day 4",
+    dateLabel: "Day 4 • 12/27 (六)",
     title: "文青咖啡與暹羅商圈",
-    subtitle: "輕鬆＋美食重點日",
+    subtitle: "週末Chill＋美食重點日",
     activities: [
       {
         time: "上午",
@@ -159,9 +159,9 @@ export const ITINERARY_DATA: DayPlan[] = [
   },
   {
     id: 5,
-    dateLabel: "Day 5",
+    dateLabel: "Day 5 • 12/28 (日)",
     title: "恰圖恰與新地標",
-    subtitle: "市集＋新商場",
+    subtitle: "週末市集最終場",
     activities: [
       {
         time: "上午",
@@ -172,7 +172,7 @@ export const ITINERARY_DATA: DayPlan[] = [
       {
         time: "下午",
         title: "恰圖恰週末市集 Chatuchak",
-        description: "世界最大的週末市集（週六日限定）。",
+        description: "世界最大的週末市集（週日有開，把握最後採買機會）。",
         location: "Chatuchak Weekend Market",
         category: "shopping",
         tags: [{ label: "注意:只開週末", type: "tip" }, { label: "必吃:椰子冰淇淋", type: "must-eat" }]
@@ -195,7 +195,7 @@ export const ITINERARY_DATA: DayPlan[] = [
   },
   {
     id: 6,
-    dateLabel: "Day 6",
+    dateLabel: "Day 6 • 12/29 (一)",
     title: "告別曼谷",
     subtitle: "收尾日",
     activities: [
