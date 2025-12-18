@@ -216,9 +216,9 @@ export const ITINERARY_DATA: DayPlan[] = [
     title: "告別曼谷",
     subtitle: "收尾日",
     // Image: Travel / Plane
-    // Adjusted to 85% to show more of the wing (bottom part of image)
+    // Adjusted to 60% to show more of the wing (balanced view)
     image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80",
-    imgPos: "center 85%",
+    imgPos: "center 60%",
     activities: [
       {
         time: "早上",
