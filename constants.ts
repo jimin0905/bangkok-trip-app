@@ -7,7 +7,7 @@ export const ITINERARY_DATA: DayPlan[] = [
     title: "抵達曼谷與河畔饗宴",
     subtitle: "抵達日｜平安夜大餐",
     // Image: Luxury Dining / Night View
-    // imgPos: 'center 25%' means center horizontally, show the top 25% vertically (pulling image down to reveal top)
+    // imgPos: 'center 30%'
     image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=800&q=80",
     imgPos: "center 30%", 
     activities: [
@@ -137,7 +137,7 @@ export const ITINERARY_DATA: DayPlan[] = [
     dateLabel: "Day 4 • 12/27 (六)",
     title: "文青咖啡與暹羅商圈",
     subtitle: "週末Chill＋美食重點日",
-    // Image: Coffee / Cafe - Updated to a reliable URL
+    // Image: Coffee / Cafe
     image: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=800&q=80",
     imgPos: "center center",
     activities: [
@@ -216,9 +216,9 @@ export const ITINERARY_DATA: DayPlan[] = [
     title: "告別曼谷",
     subtitle: "收尾日",
     // Image: Travel / Plane
-    // Adjusted to 65% to show more of the wing (lower part of image)
+    // Adjusted to 85% to show more of the wing (bottom part of image)
     image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80",
-    imgPos: "center 65%",
+    imgPos: "center 85%",
     activities: [
       {
         time: "早上",
