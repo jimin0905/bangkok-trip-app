@@ -32,15 +32,22 @@ export interface ChatMessage {
   sources?: { uri: string; title: string }[];
 }
 
+export interface UserProfile {
+  id: string;
+  name: string;
+}
+
 export interface Expense {
   id: string;
   title: string;
   amount: number;
   category: 'food' | 'shopping' | 'transport' | 'other';
   dayId: number; // 0 for general, 1-6 for specific days
+  date?: string; // YYYY-MM-DD format
   timestamp: number;
-  paidBy: 'A' | 'B'; // Who paid?
-  splitType: 'split' | 'self' | 'other'; // split=50/50, self=payer owns all, other=payer paid for other
+  paidBy: string; // The ID of the user who paid
+  involvedUsers: string[]; // List of User IDs who share this expense
+  splitType: 'split' | 'self' | 'other'; // split=Equal split among involved, self=Payer only
   isSettled: boolean; // Has this been paid back?
 }
 

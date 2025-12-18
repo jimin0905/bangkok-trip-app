@@ -1,7 +1,8 @@
+
 import { initializeApp, FirebaseApp } from "firebase/app";
 import { getDatabase, ref, set, remove, update, onValue, off, Database } from "firebase/database";
 import { getAuth, signInAnonymously, onAuthStateChanged, Auth } from "firebase/auth";
-import { Expense } from "../types";
+import { Expense, UserProfile } from "../types";
 
 // ==========================================
 // Firebase Config Initialization
@@ -126,8 +127,8 @@ const ensureAuth = async () => {
     }
 };
 
-// Generate a secure SHA-256 path
-const getSecurePath = async (groupId: string, pin: string) => {
+// Generate a secure SHA-256 base path for the trip
+const getSecureBasePath = async (groupId: string, pin: string) => {
     if (!groupId || !pin) throw new Error("ID and PIN required");
     
     const raw = `${groupId.trim()}_${pin.trim()}_BKK_SECRET_SALT`;
@@ -137,7 +138,7 @@ const getSecurePath = async (groupId: string, pin: string) => {
         const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        return `trips/${hashHex}/expenses`;
+        return `trips/${hashHex}`; // Base path
     } else {
         let hash = 0;
         for (let i = 0; i < raw.length; i++) {
@@ -145,7 +146,7 @@ const getSecurePath = async (groupId: string, pin: string) => {
             hash = ((hash << 5) - hash) + char;
             hash = hash & hash;
         }
-        return `trips/insecure_${Math.abs(hash)}/expenses`;
+        return `trips/insecure_${Math.abs(hash)}`; // Base path
     }
 };
 
@@ -153,7 +154,13 @@ export const syncService = {
     isReady: () => isInitialized,
 
     // Returns a PROMISE that resolves to the unsubscribe function
-    subscribe: async (groupId: string, pin: string, onStatus: (status: string) => void, callback: (data: Expense[]) => void) => {
+    // Subscribes to the WHOLE trip node (expenses + users)
+    subscribe: async (
+        groupId: string, 
+        pin: string, 
+        onStatus: (status: string) => void, 
+        callback: (data: { expenses: Expense[], users: UserProfile[] }) => void
+    ) => {
         if (!isInitialized || !db) {
             console.warn("Sync attempted but Firebase not ready.");
             return () => {};
@@ -165,32 +172,35 @@ export const syncService = {
             await ensureAuth(); 
 
             // 2. 加密路徑計算
-            const path = await getSecurePath(groupId, pin);
-            const expensesRef = ref(db, path);
+            const path = await getSecureBasePath(groupId, pin);
+            const tripRef = ref(db, path);
             
-            // 3. 資料同步
+            // 3. 資料同步 (Listen to root of trip)
             onStatus("☁️ 正在下載資料...");
             
-            const unsubscribe = onValue(expensesRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    const list = Object.values(data) as Expense[];
-                    list.sort((a, b) => b.timestamp - a.timestamp);
-                    callback(list);
-                } else {
-                    callback([]);
-                }
+            const unsubscribe = onValue(tripRef, (snapshot) => {
+                const val = snapshot.val() || {};
+                
+                // Parse Expenses
+                const expensesObj = val.expenses || {};
+                const expenseList = Object.values(expensesObj) as Expense[];
+                expenseList.sort((a, b) => b.timestamp - a.timestamp);
+
+                // Parse Users
+                const usersList = (val.users as UserProfile[]) || [];
+
+                callback({ expenses: expenseList, users: usersList });
                 onStatus(""); // 完成
             }, (error) => {
                 console.error("Sync Error:", error);
                 if (error.message.includes("permission_denied")) {
-                    onStatus("❌ 權限不足 (請檢查資料庫規則)");
+                    onStatus("❌ 權限不足 (請檢查DB規則)");
                 } else {
                     onStatus("❌ 連線錯誤");
                 }
             });
 
-            return () => off(expensesRef, 'value', unsubscribe);
+            return () => off(tripRef, 'value', unsubscribe);
         } catch (e) {
             console.error("Setup failed:", e);
             onStatus("❌ 驗證失敗 (請看 Console)");
@@ -201,29 +211,46 @@ export const syncService = {
     addExpense: async (groupId: string, pin: string, expense: Expense) => {
         if (!isInitialized || !db) return;
         await ensureAuth();
-        const path = await getSecurePath(groupId, pin);
-        const itemRef = ref(db, `${path}/${expense.id}`);
+        const path = await getSecureBasePath(groupId, pin);
+        const itemRef = ref(db, `${path}/expenses/${expense.id}`);
+        await set(itemRef, expense);
+    },
+
+    // Same as add, but syntactically separated for clarity in UI code
+    updateExpense: async (groupId: string, pin: string, expense: Expense) => {
+        if (!isInitialized || !db) return;
+        await ensureAuth();
+        const path = await getSecureBasePath(groupId, pin);
+        const itemRef = ref(db, `${path}/expenses/${expense.id}`);
         await set(itemRef, expense);
     },
 
     deleteExpense: async (groupId: string, pin: string, expenseId: string) => {
         if (!isInitialized || !db) return;
         await ensureAuth();
-        const path = await getSecurePath(groupId, pin);
-        const itemRef = ref(db, `${path}/${expenseId}`);
+        const path = await getSecureBasePath(groupId, pin);
+        const itemRef = ref(db, `${path}/expenses/${expenseId}`);
         await remove(itemRef);
     },
 
     settleExpenses: async (groupId: string, pin: string, expenseIds: string[]) => {
         if (!isInitialized || !db) return;
         await ensureAuth();
-        const path = await getSecurePath(groupId, pin);
+        const path = await getSecureBasePath(groupId, pin);
         const updates: Record<string, any> = {};
         
         expenseIds.forEach(id => {
-            updates[`${path}/${id}/isSettled`] = true;
+            updates[`${path}/expenses/${id}/isSettled`] = true;
         });
 
         await update(ref(db), updates);
+    },
+
+    updateUsers: async (groupId: string, pin: string, users: UserProfile[]) => {
+        if (!isInitialized || !db) return;
+        await ensureAuth();
+        const path = await getSecureBasePath(groupId, pin);
+        const usersRef = ref(db, `${path}/users`);
+        await set(usersRef, users);
     }
 };
