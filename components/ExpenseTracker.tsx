@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Wallet, Plus, X, Trash2, ShoppingBag, Utensils, Bus, MoreHorizontal, Cloud, CloudOff, LogOut, LogIn, User, CheckCircle2, ArrowRightLeft, Users, Gift, UserCircle, Calculator, Filter, ListFilter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Wallet, Plus, X, Trash2, ShoppingBag, Utensils, Bus, MoreHorizontal, Cloud, CloudOff, LogOut, LogIn, User, CheckCircle2, ArrowRightLeft, Users, Gift, UserCircle, Calculator, Filter, ListFilter, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { Expense } from '../types';
 import { syncService } from '../services/firebase';
 
@@ -22,6 +22,7 @@ const ExpenseTracker: React.FC = () => {
   
   // Sync State
   const [isSyncMode, setIsSyncMode] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<string>(''); // '' | 'Verifying...' | 'Syncing...'
   const [groupId, setGroupId] = useState('');
   const [pin, setPin] = useState('');
   const [tempGroupId, setTempGroupId] = useState('');
@@ -65,7 +66,6 @@ const ExpenseTracker: React.FC = () => {
             if (g && p) {
                 setGroupId(g);
                 setPin(p);
-                // Also pre-fill the form inputs so they are ready if user logs out
                 setTempGroupId(g);
                 setTempPin(p);
                 setIsSyncMode(true);
@@ -76,12 +76,42 @@ const ExpenseTracker: React.FC = () => {
 
   // Sync Subscription
   useEffect(() => {
-    if (isSyncMode && groupId && pin && syncService.isReady()) {
-        const unsubscribe = syncService.subscribe(groupId, pin, (data) => {
-            setExpenses(data);
-        });
-        return () => unsubscribe();
-    }
+    let unsubscribe = () => {};
+    let isMounted = true;
+
+    const setupSync = async () => {
+        if (isSyncMode && groupId && pin && syncService.isReady()) {
+            setConnectionStatus('啟動中...');
+            try {
+                // Pass a status callback to update UI during Auth/Path Gen steps
+                const unsub = await syncService.subscribe(
+                    groupId, 
+                    pin, 
+                    (status) => { if (isMounted) setConnectionStatus(status); },
+                    (data) => {
+                        if (isMounted) {
+                            setExpenses(data);
+                            // Only clear status if it was "Downloading...", preserve errors
+                            setConnectionStatus(prev => prev.includes('❌') ? prev : '');
+                        }
+                    }
+                );
+                if (isMounted) unsubscribe = unsub;
+            } catch (e) {
+                console.error("Sync failed", e);
+                if (isMounted) setConnectionStatus('❌ 連線失敗');
+            }
+        } else {
+            setConnectionStatus('');
+        }
+    };
+
+    setupSync();
+
+    return () => {
+        isMounted = false;
+        if (unsubscribe) unsubscribe();
+    };
   }, [isSyncMode, groupId, pin]);
 
   // Local Storage Saver (Only runs when NOT in sync mode)
@@ -107,14 +137,15 @@ const ExpenseTracker: React.FC = () => {
       setIsSyncMode(false);
       setGroupId('');
       setPin('');
+      setConnectionStatus('');
       localStorage.removeItem('bkk_sync_session');
-      // Note: We do NOT clear tempGroupId/tempPin here, so user can easily log back in if needed.
+      
       const savedLocal = localStorage.getItem('bkk_expenses_2025');
       if (savedLocal) setExpenses(JSON.parse(savedLocal));
       else setExpenses([]);
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!title || !amount) return;
     const val = parseFloat(amount);
     if (isNaN(val) || val <= 0) return;
@@ -132,26 +163,25 @@ const ExpenseTracker: React.FC = () => {
     };
 
     if (isSyncMode && syncService.isReady()) {
-        syncService.addExpense(groupId, pin, newExpense);
+        await syncService.addExpense(groupId, pin, newExpense);
     } else {
         setExpenses(prev => [newExpense, ...prev]);
     }
 
     setTitle('');
     setAmount('');
-    // Reset to default
     setSplitType('split');
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (isSyncMode && syncService.isReady()) {
-        syncService.deleteExpense(groupId, pin, id);
+        await syncService.deleteExpense(groupId, pin, id);
     } else {
         setExpenses(prev => prev.filter(e => e.id !== id));
     }
   };
 
-  const handleSettleUp = () => {
+  const handleSettleUp = async () => {
       if (!isSyncMode || !syncService.isReady()) {
           setExpenses(prev => prev.map(e => ({ ...e, isSettled: true })));
           return;
@@ -159,7 +189,7 @@ const ExpenseTracker: React.FC = () => {
 
       const unsettledIds = expenses.filter(e => !e.isSettled).map(e => e.id);
       if (unsettledIds.length > 0) {
-          syncService.settleExpenses(groupId, pin, unsettledIds);
+          await syncService.settleExpenses(groupId, pin, unsettledIds);
       }
   };
 
@@ -168,8 +198,6 @@ const ExpenseTracker: React.FC = () => {
       let total = 0;
       let costA = 0; // Jimin's true cost
       let costB = 0; // Simon's true cost
-      
-      // Net Balance Calculation
       let netBalance = 0;
       let hasUnsettled = false;
 
@@ -220,7 +248,6 @@ const ExpenseTracker: React.FC = () => {
 
   return (
     <>
-      {/* Floating Action Button - Moved back to RIGHT bottom */}
       <button
         onClick={() => setIsOpen(true)}
         className={`fixed bottom-8 right-6 z-50 bg-stone-800 text-white p-4 rounded-full shadow-[0_8px_20px_rgba(0,0,0,0.3)] hover:bg-stone-700 active:scale-95 transition-all duration-300 ${isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}
@@ -229,11 +256,10 @@ const ExpenseTracker: React.FC = () => {
         <Wallet size={24} />
       </button>
 
-      {/* Drawer - Slides from RIGHT */}
       <div 
         className={`fixed inset-y-0 right-0 w-full sm:w-[450px] bg-[#F9F9F7] shadow-2xl z-50 transform transition-transform duration-300 flex flex-col border-l border-stone-200 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
-        {/* Header Summary - Removed overflow-hidden to fix clipping */}
+        {/* Header Summary */}
         <div className={`px-6 pt-6 pb-6 text-white shadow-md transition-colors duration-500 relative flex-shrink-0 ${isSyncMode ? 'bg-emerald-900' : 'bg-stone-900'}`}>
           <div className="flex justify-between items-start relative z-10 mb-4">
               <div>
@@ -242,7 +268,9 @@ const ExpenseTracker: React.FC = () => {
                       {isSyncMode ? (
                           <div className="flex items-center gap-1 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
                               <Cloud size={10} className="text-emerald-300" />
-                              <span className="text-[9px] font-bold text-emerald-300">SYNC: {groupId}</span>
+                              <span className="text-[9px] font-bold text-emerald-300">
+                                  {connectionStatus ? 'SYNCING...' : `SYNC: ${groupId}`}
+                              </span>
                           </div>
                       ) : (
                           <div className="flex items-center gap-1 bg-white/10 px-2 py-0.5 rounded-full">
@@ -273,7 +301,6 @@ const ExpenseTracker: React.FC = () => {
               </div>
           </div>
 
-          {/* Individual Costs Grid */}
           <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="bg-white/5 p-2.5 rounded-lg border border-white/5">
                  <div className="flex items-center gap-1.5 mb-1 opacity-70">
@@ -291,7 +318,6 @@ const ExpenseTracker: React.FC = () => {
               </div>
           </div>
 
-          {/* Debt Summary Bar */}
           {stats.hasUnsettled ? (
              <div className="bg-white text-stone-900 rounded-xl p-3 shadow-lg transform transition-all border border-stone-200">
                  <div className="flex justify-between items-center mb-2">
@@ -320,7 +346,7 @@ const ExpenseTracker: React.FC = () => {
           )}
         </div>
 
-        {/* Auth Panel (Sync) */}
+        {/* Auth Panel */}
         {showAuth && (
             <div className="p-4 bg-stone-100 border-b border-stone-200 animate-fade-in flex-shrink-0">
                 <div className="bg-white rounded-xl p-4 shadow-sm">
@@ -333,7 +359,7 @@ const ExpenseTracker: React.FC = () => {
                     </div>
                     {firebaseError && (
                          <div className="mb-3 p-2 bg-red-50 text-red-600 text-xs rounded border border-red-100">
-                            Firebase 設定未完成。請檢查環境變數 (FIREBASE_CONFIG) 或瀏覽器 Console。
+                            Firebase 設定未完成。請檢查環境變數。
                          </div>
                     )}
                     <div className="space-y-3">
@@ -348,12 +374,15 @@ const ExpenseTracker: React.FC = () => {
                         <button onClick={handleLogin} disabled={firebaseError} className="w-full bg-stone-800 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-stone-700 flex justify-center items-center gap-2 shadow-sm">
                             <LogIn size={14} /> 開始同步
                         </button>
+                        <p className="text-[10px] text-stone-400 text-center mt-2">
+                            資料將使用 SHA-256 加密路徑儲存，需啟用匿名驗證。
+                        </p>
                     </div>
                 </div>
             </div>
         )}
 
-        {/* Toggle Bar for Input Form */}
+        {/* Form Toggle */}
         <button 
             onClick={() => setIsFormExpanded(!isFormExpanded)}
             className="w-full bg-white border-b border-stone-100 p-3 flex items-center justify-between hover:bg-stone-50 transition-colors flex-shrink-0 z-20 relative"
@@ -369,7 +398,7 @@ const ExpenseTracker: React.FC = () => {
             {isFormExpanded ? <ChevronUp size={16} className="text-stone-400" /> : <ChevronDown size={16} className="text-stone-400" />}
         </button>
 
-        {/* Input Form Area - Collapsible */}
+        {/* Input Form */}
         <div className={`bg-white border-b border-stone-100 overflow-hidden transition-all duration-300 ease-in-out flex-shrink-0 shadow-sm relative z-10 ${isFormExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="p-4 space-y-3">
             <div className="flex gap-3">
@@ -442,7 +471,7 @@ const ExpenseTracker: React.FC = () => {
             </div>
         </div>
         
-        {/* Filtered Total (Only shows if filtered) */}
+        {/* Filtered Total */}
         {(filterDay !== 'all' || filterPayer !== 'all') && (
             <div className="px-4 py-1.5 bg-yellow-50 border-b border-yellow-100 flex justify-between items-center text-xs text-yellow-800">
                 <span className="font-medium">篩選小計 (Filtered Total):</span>
@@ -450,8 +479,25 @@ const ExpenseTracker: React.FC = () => {
             </div>
         )}
 
-        {/* Expense List - Grows to fill space */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#F9F9F7] pb-24">
+        {/* List */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[#F9F9F7] pb-24 relative">
+            {connectionStatus && isSyncMode ? (
+                <div className="absolute inset-0 bg-[#F9F9F7]/90 z-20 flex flex-col items-center justify-center text-stone-500 gap-3">
+                    {connectionStatus.includes('❌') ? (
+                        <div className="text-red-500 flex flex-col items-center">
+                            <CloudOff size={32} className="mb-2 opacity-80" />
+                            <span className="text-sm font-bold">{connectionStatus}</span>
+                            <span className="text-xs opacity-70 mt-1">請檢查網路或 Trip ID/PIN</span>
+                        </div>
+                    ) : (
+                        <>
+                            <Loader2 size={24} className="animate-spin text-emerald-600" />
+                            <span className="text-xs font-bold tracking-wider animate-pulse">{connectionStatus}</span>
+                        </>
+                    )}
+                </div>
+            ) : null}
+
             {filteredExpenses.length === 0 ? (
                 <div className="h-40 flex flex-col items-center justify-center text-stone-300">
                     <ListFilter size={32} strokeWidth={1} className="mb-2 opacity-30" />
