@@ -5,14 +5,31 @@ import { DayPlan, ViewState, TripSettings } from './types';
 import ItineraryCard from './components/ItineraryCard';
 import DayDetail from './components/DayDetail';
 import ExpenseTracker from './components/ExpenseTracker';
-import { Settings, Calendar, Save, X } from 'lucide-react';
+import { Settings, Calendar, Save, X, ChevronUp, ChevronDown } from 'lucide-react';
 
 const App: React.FC = () => {
   const [viewState, setViewState] = useState<ViewState>(ViewState.LIST);
   const [selectedDay, setSelectedDay] = useState<DayPlan | null>(null);
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAtTop, setIsAtTop] = useState(true);
   
+  const listScrollPosRef = useRef(0);
+
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsAtTop(window.scrollY < 200);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const [tripSettings, setTripSettings] = useState<TripSettings>(() => {
     const saved = localStorage.getItem('bkk_trip_settings');
     return saved ? JSON.parse(saved) : { startDate: '2025-12-20', endDate: '2025-12-29' };
@@ -44,6 +61,18 @@ const App: React.FC = () => {
   }, [tripSettings]);
 
   useEffect(() => {
+    if (viewState === ViewState.LIST && !isExpenseOpen) {
+      const timer = setTimeout(() => {
+        window.scrollTo({
+          top: listScrollPosRef.current,
+          behavior: 'instant' as any
+        });
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [viewState, isExpenseOpen]);
+
+  useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       if (isExpenseOpen) {
         setIsExpenseOpen(false);
@@ -69,6 +98,7 @@ const App: React.FC = () => {
   };
 
   const handleDayClick = (day: DayPlan) => {
+    listScrollPosRef.current = window.scrollY;
     setSelectedDay(day);
     setViewState(ViewState.DETAIL);
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -76,23 +106,50 @@ const App: React.FC = () => {
   };
 
   const handleBack = () => window.history.back();
+  
   const openExpenseTracker = () => {
+    listScrollPosRef.current = window.scrollY;
     setIsExpenseOpen(true);
     safePushState({ view: 'expense' }, '#expenses');
   };
+  
   const closeExpenseTracker = () => window.history.back();
 
   const handleSaveSettings = async () => {
     setTripSettings(tempSettings);
-    // 如果雲端同步已啟動，則推送到 Firebase
     if (expenseTrackerRef.current) {
       await expenseTrackerRef.current.pushSettings(tempSettings);
     }
     setIsSettingsOpen(false);
   };
 
+  const scrollToToggle = () => {
+    if (isAtTop) {
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: 'smooth'
+      });
+    } else {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen font-sans text-stone-800 bg-[#F9F9F7]">
+      {/* 快速捲動按鈕 - UIUX 標準化版 */}
+      <button
+        onClick={scrollToToggle}
+        className={`fixed bottom-[96px] right-6 z-40 w-14 h-14 bg-white/80 backdrop-blur-md border border-stone-100 text-stone-600 rounded-full shadow-2xl transition-all duration-500 flex items-center justify-center ${
+          viewState === ViewState.LIST && !isExpenseOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-0 opacity-0 translate-y-10 pointer-events-none'
+        } hover:bg-white active:scale-90`}
+        aria-label={isAtTop ? "Scroll to bottom" : "Scroll to top"}
+      >
+        {isAtTop ? <ChevronDown size={24} strokeWidth={2.5} /> : <ChevronUp size={24} strokeWidth={2.5} />}
+      </button>
+
       {/* Header */}
       {viewState === ViewState.LIST && (
         <header className="sticky top-0 z-30 bg-[#F9F9F7]/95 backdrop-blur-sm border-b border-gray-100/50">
