@@ -60,6 +60,18 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
       localStorage.setItem('bkk_exchange_rates', JSON.stringify(exchangeRates));
   }, [exchangeRates]);
 
+  // 鎖定 Body 滾動，防止滑動記帳頁面時背後的行程表也跟著動
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   const currentRate = exchangeRates[calcCurrency];
 
   const handleRateChange = (val: string) => {
@@ -427,8 +439,9 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
     <>
       <button onClick={onRequestOpen} className={`fixed bottom-8 right-6 z-50 bg-stone-800 text-white p-4 rounded-full shadow-lg transition-all duration-300 ${isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}><Wallet size={24} /></button>
 
-      <div className={`fixed inset-y-0 right-0 w-full sm:w-[450px] bg-[#F9F9F7] shadow-2xl z-50 transform transition-transform duration-300 flex flex-col border-l border-stone-200 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        {/* Header - Summary */}
+      <div className={`fixed inset-y-0 right-0 w-full sm:w-[450px] bg-[#F9F9F7] shadow-2xl z-50 transform transition-transform duration-300 flex flex-col border-l border-stone-200 overscroll-contain ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        
+        {/* Fixed Header */}
         <div className={`px-6 pt-6 pb-6 text-white shadow-md relative flex-shrink-0 transition-colors duration-500 ${isSyncMode ? 'bg-emerald-900' : 'bg-stone-900'}`}>
           <div className="flex justify-between items-start relative z-10 mb-2">
               <div>
@@ -439,7 +452,6 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
                   </div>
               </div>
               <div className="flex gap-2">
-                  {/* Buttons Group */}
                   <button onClick={() => setShowSimpleCalc(!showSimpleCalc)} className={`p-2 rounded-full transition-colors ${showSimpleCalc ? 'bg-orange-500 text-white' : 'bg-white/10 text-white'}`}><Calculator size={20} /></button>
                   <button onClick={() => setShowExchange(!showExchange)} className={`p-2 rounded-full transition-colors ${showExchange ? 'bg-orange-500 text-white' : 'bg-white/10 text-white'}`}><ArrowRightLeft size={20} /></button>
                   <button onClick={() => setShowUserManage(!showUserManage)} className={`p-2 rounded-full transition-colors ${showUserManage ? 'bg-white text-stone-900' : 'bg-white/10 text-white'}`}><Users size={20} /></button>
@@ -451,6 +463,7 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
               </div>
           </div>
 
+          {/* User Cards Row */}
           <div className="relative z-10 mt-4 overflow-x-auto no-scrollbar pb-1">
               <div className="flex gap-3">
                   {users.map(u => (
@@ -476,7 +489,7 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
               </div>
           </div>
 
-          {/* Simple Calculator Modal */}
+          {/* Overlays inside Header (Calculator, Exchange, etc) */}
           {showSimpleCalc && (
               <div className="mt-4 bg-stone-800 rounded-xl p-4 animate-fade-in relative z-20 text-white shadow-lg">
                   <div className="flex justify-between items-center mb-3">
@@ -508,7 +521,6 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
               </div>
           )}
 
-          {/* Exchange Rate Modal */}
           {showExchange && (
               <div className="mt-4 bg-white/95 rounded-xl p-4 animate-fade-in relative z-20 text-stone-800 shadow-lg">
                   <div className="flex justify-between items-center mb-3 border-b border-stone-100 pb-2">
@@ -608,201 +620,207 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
           )}
         </div>
 
-        {showAuth && (
-            <div className="p-4 bg-stone-100 border-b border-stone-200 animate-fade-in">
-                <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
-                    <div className="flex justify-between items-center"><h3 className="font-bold text-stone-700 text-sm flex items-center gap-2"><Cloud size={16} className="text-emerald-600" /> 雲端同步</h3><button onClick={() => setShowAuth(false)}><X size={16} /></button></div>
-                    <input type="text" value={tempGroupId} onChange={e => setTempGroupId(e.target.value)} placeholder="Trip ID" className="w-full bg-stone-50 border border-stone-200 rounded px-2 py-2 text-sm" />
-                    <input type="password" value={tempPin} onChange={e => setTempPin(e.target.value)} placeholder="PIN 密碼" className="w-full bg-stone-50 border border-stone-200 rounded px-2 py-2 text-sm" />
-                    <button onClick={handleLogin} disabled={firebaseError} className="w-full bg-stone-800 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-stone-700 flex justify-center items-center gap-2"><LogIn size={14} /> 開始同步</button>
+        {/* --- SCROLLABLE CONTENT START --- */}
+        <div className="flex-1 overflow-y-auto bg-[#F9F9F7] relative">
+            
+            {showAuth && (
+                <div className="p-4 bg-stone-100 border-b border-stone-200 animate-fade-in">
+                    <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
+                        <div className="flex justify-between items-center"><h3 className="font-bold text-stone-700 text-sm flex items-center gap-2"><Cloud size={16} className="text-emerald-600" /> 雲端同步</h3><button onClick={() => setShowAuth(false)}><X size={16} /></button></div>
+                        <input type="text" value={tempGroupId} onChange={e => setTempGroupId(e.target.value)} placeholder="Trip ID" className="w-full bg-stone-50 border border-stone-200 rounded px-2 py-2 text-sm" />
+                        <input type="password" value={tempPin} onChange={e => setTempPin(e.target.value)} placeholder="PIN 密碼" className="w-full bg-stone-50 border border-stone-200 rounded px-2 py-2 text-sm" />
+                        <button onClick={handleLogin} disabled={firebaseError} className="w-full bg-stone-800 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-stone-700 flex justify-center items-center gap-2"><LogIn size={14} /> 開始同步</button>
+                    </div>
                 </div>
-            </div>
-        )}
+            )}
 
-        {/* Input Form Toggle */}
-        <button onClick={() => (isFormExpanded && editingId ? resetForm() : setIsFormExpanded(!isFormExpanded))} className="w-full bg-white border-b border-stone-100 p-4 flex items-center justify-between hover:bg-stone-50 z-20 relative">
-            <div className="flex items-center gap-2">
-                <div className={`p-1.5 rounded-full ${isFormExpanded ? (editingId ? 'bg-orange-500 text-white' : 'bg-stone-800 text-white') : 'bg-stone-100 text-stone-400'}`}>{editingId ? <Pencil size={14} /> : <Plus size={14} />}</div>
-                <span className="text-xs font-bold text-stone-700 uppercase tracking-widest">{editingId ? '編輯消費' : (isFormExpanded ? '取消' : '記一筆 (NT$)')}</span>
-            </div>
-            {isFormExpanded ? <ChevronUp size={16} className="text-stone-400" /> : <ChevronDown size={16} className="text-stone-400" />}
-        </button>
-
-        {/* Form Content */}
-        <div className={`bg-white border-b border-stone-100 overflow-y-auto transition-all duration-300 ease-in-out flex-shrink-0 shadow-sm relative z-10 ${isFormExpanded ? 'max-h-[75vh] pb-8' : 'max-h-0 overflow-hidden'}`}>
-          <div className="p-4 space-y-5">
-            <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-stone-400 uppercase mb-1">消費項目</label>
-                    <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="例如：按摩、晚餐..." className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm" />
+            {/* Input Form Toggle */}
+            <button onClick={() => (isFormExpanded && editingId ? resetForm() : setIsFormExpanded(!isFormExpanded))} className="w-full bg-white border-b border-stone-100 p-4 flex items-center justify-between hover:bg-stone-50 z-20 relative">
+                <div className="flex items-center gap-2">
+                    <div className={`p-1.5 rounded-full ${isFormExpanded ? (editingId ? 'bg-orange-500 text-white' : 'bg-stone-800 text-white') : 'bg-stone-100 text-stone-400'}`}>{editingId ? <Pencil size={14} /> : <Plus size={14} />}</div>
+                    <span className="text-xs font-bold text-stone-700 uppercase tracking-widest">{editingId ? '編輯消費' : (isFormExpanded ? '取消' : '記一筆 (NT$)')}</span>
                 </div>
+                {isFormExpanded ? <ChevronUp size={16} className="text-stone-400" /> : <ChevronDown size={16} className="text-stone-400" />}
+            </button>
+
+            {/* Form Content - Now part of the flow */}
+            <div className={`bg-white border-b border-stone-100 transition-all duration-300 ease-in-out shadow-sm relative z-10 ${isFormExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+            <div className="p-4 space-y-5">
+                <div className="grid grid-cols-3 gap-4">
+                    <div className="col-span-2">
+                        <label className="block text-[10px] font-bold text-stone-400 uppercase mb-1">消費項目</label>
+                        <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="例如：按摩、晚餐..." className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm" />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-bold text-stone-400 uppercase mb-1">金額 (NT$)</label>
+                        <input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm font-mono" />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-[10px] font-bold text-stone-400 uppercase mb-1">日期</label>
+                        <div className="relative">
+                            <select 
+                                value={selectedDate} 
+                                onChange={e => setSelectedDate(e.target.value)} 
+                                className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-xs font-bold text-stone-700 appearance-none outline-none"
+                            >
+                                {TRIP_DATES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                            </select>
+                            <Calendar size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-bold text-stone-400 uppercase mb-1">類別</label>
+                        <select 
+                            value={category} 
+                            onChange={e => setCategory(e.target.value as any)}
+                            className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-xs font-bold text-stone-700 outline-none"
+                        >
+                            {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                        </select>
+                    </div>
+                </div>
+
                 <div>
-                    <label className="block text-[10px] font-bold text-stone-400 uppercase mb-1">金額 (NT$)</label>
-                    <input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm font-mono" />
+                    <label className="block text-[10px] font-bold text-stone-400 uppercase mb-2">誰出的錢？ (Payer)</label>
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                        {users.map(u => (
+                            <button key={u.id} onClick={() => setPayer(u.id)} className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold border transition-all ${payer === u.id ? 'bg-stone-800 text-white border-stone-800 shadow-md' : 'bg-white text-stone-400 border-stone-200'}`}>{u.name}</button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-stone-50">
+                    <div className="flex items-center justify-between"><label className="text-[10px] font-bold text-stone-400 uppercase">分帳方式</label>
+                        <div className="flex bg-stone-100 p-0.5 rounded-lg">
+                            <button onClick={() => setSplitType('split')} className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${splitType === 'split' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400'}`}>均分</button>
+                            <button onClick={() => setSplitType('self')} className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${splitType === 'self' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400'}`}>自費</button>
+                            <button onClick={() => setSplitType('individual')} className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${splitType === 'individual' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400'}`}>各付各/代墊</button>
+                        </div>
+                    </div>
+
+                    {splitType !== 'self' && (
+                        <div className="space-y-3">
+                            <label className="block text-[10px] font-bold text-stone-400 uppercase">參與成員 ({selectedParticipants.length})</label>
+                            {/* Relaxed container to allow scrolling via parent */}
+                            <div className="p-1 border border-stone-50 rounded-xl bg-stone-50/50">
+                                <div className={`grid gap-2 ${splitType === 'individual' ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                                    {users.map(u => {
+                                        const isSelected = selectedParticipants.includes(u.id);
+                                        return (
+                                            <div key={u.id} className={`flex items-center justify-between p-2 rounded-xl border transition-all ${isSelected ? 'bg-stone-50 border-stone-200' : 'bg-white border-stone-100 opacity-60'}`}>
+                                                <button onClick={() => toggleParticipant(u.id)} className="flex items-center gap-2 flex-1"><div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-colors ${isSelected ? 'bg-stone-800 border-stone-800' : 'border-stone-300'}`}>{isSelected && <Check size={10} className="text-white" />}</div><span className="text-xs font-bold text-stone-700">{u.name}</span></button>
+                                                {splitType === 'individual' && isSelected && (
+                                                    <div className="flex items-center gap-1 border-l border-stone-200 pl-2 ml-2"><span className="text-[10px] text-stone-400">$</span><input type="number" value={customAmounts[u.id] || ''} onChange={e => setCustomAmounts({...customAmounts, [u.id]: e.target.value})} className="w-24 bg-transparent text-xs font-mono text-stone-800 focus:outline-none text-right" placeholder="0" /></div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                    <button onClick={() => setSelectedDate(getTodayString())} className="flex-1 bg-stone-100 text-stone-600 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2"><Calendar size={14} /> 今天</button>
+                    <button onClick={handleSave} disabled={!title || !amount} className={`flex-[2] text-white py-3 rounded-xl text-xs font-bold shadow-md flex items-center justify-center gap-2 transition-transform active:scale-95 ${editingId ? 'bg-orange-600' : (isSyncMode ? 'bg-emerald-600' : 'bg-stone-800')}`}>{editingId ? <Pencil size={16} /> : <Plus size={16} />} {editingId ? '更新紀錄' : '確認新增'}</button>
                 </div>
             </div>
+            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-[10px] font-bold text-stone-400 uppercase mb-1">日期</label>
+            {/* Filter Bar - Sticky inside the scroll view */}
+            <div className="px-4 py-3 bg-white border-b border-stone-200 space-y-3 sticky top-0 z-10">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2"><ListFilter size={14} className="text-stone-400" /><span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">篩選條件</span></div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                     <div className="relative">
                         <select 
-                            value={selectedDate} 
-                            onChange={e => setSelectedDate(e.target.value)} 
-                            className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-xs font-bold text-stone-700 appearance-none outline-none"
+                            value={filterDate} 
+                            onChange={(e) => setFilterDate(e.target.value)}
+                            className="w-full bg-stone-50 border border-stone-200 rounded-lg pl-3 pr-8 py-2.5 text-[11px] font-bold text-stone-700 appearance-none outline-none focus:border-stone-400 transition-colors"
                         >
+                            <option value="all">所有日期</option>
                             {TRIP_DATES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
                         </select>
-                        <Calendar size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+                        <CalendarDays size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+                    </div>
+                    <div className="relative">
+                        <select 
+                            value={filterPayer} 
+                            onChange={(e) => setFilterPayer(e.target.value)}
+                            className="w-full bg-stone-50 border border-stone-200 rounded-lg pl-3 pr-8 py-2.5 text-[11px] font-bold text-stone-700 appearance-none outline-none focus:border-stone-400 transition-colors"
+                        >
+                            <option value="all">所有付款人</option>
+                            {users.map(u => <option key={u.id} value={u.id}>{u.name} 付款</option>)}
+                        </select>
+                        <User size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
                     </div>
                 </div>
-                <div>
-                    <label className="block text-[10px] font-bold text-stone-400 uppercase mb-1">類別</label>
-                    <select 
-                        value={category} 
-                        onChange={e => setCategory(e.target.value as any)}
-                        className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-xs font-bold text-stone-700 outline-none"
-                    >
-                        {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-                    </select>
-                </div>
             </div>
-
-            <div>
-                <label className="block text-[10px] font-bold text-stone-400 uppercase mb-2">誰出的錢？ (Payer)</label>
-                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                    {users.map(u => (
-                        <button key={u.id} onClick={() => setPayer(u.id)} className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold border transition-all ${payer === u.id ? 'bg-stone-800 text-white border-stone-800 shadow-md' : 'bg-white text-stone-400 border-stone-200'}`}>{u.name}</button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t border-stone-50">
-                <div className="flex items-center justify-between"><label className="text-[10px] font-bold text-stone-400 uppercase">分帳方式</label>
-                    <div className="flex bg-stone-100 p-0.5 rounded-lg">
-                        <button onClick={() => setSplitType('split')} className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${splitType === 'split' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400'}`}>均分</button>
-                        <button onClick={() => setSplitType('self')} className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${splitType === 'self' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400'}`}>自費</button>
-                        <button onClick={() => setSplitType('individual')} className={`px-3 py-1 rounded text-[10px] font-bold transition-all ${splitType === 'individual' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400'}`}>各付各/代墊</button>
-                    </div>
-                </div>
-
-                {splitType !== 'self' && (
-                    <div className="space-y-3">
-                        <label className="block text-[10px] font-bold text-stone-400 uppercase">參與成員 ({selectedParticipants.length})</label>
-                        {/* Dynamic grid columns based on split type: 1 column for individual to allow space for inputs */}
-                        <div className="max-h-52 overflow-y-auto no-scrollbar p-1 border border-stone-50 rounded-xl overscroll-contain">
-                            <div className={`grid gap-2 ${splitType === 'individual' ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                                {users.map(u => {
-                                    const isSelected = selectedParticipants.includes(u.id);
-                                    return (
-                                        <div key={u.id} className={`flex items-center justify-between p-2 rounded-xl border transition-all ${isSelected ? 'bg-stone-50 border-stone-200' : 'bg-white border-stone-100 opacity-60'}`}>
-                                            <button onClick={() => toggleParticipant(u.id)} className="flex items-center gap-2 flex-1"><div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-colors ${isSelected ? 'bg-stone-800 border-stone-800' : 'border-stone-300'}`}>{isSelected && <Check size={10} className="text-white" />}</div><span className="text-xs font-bold text-stone-700">{u.name}</span></button>
-                                            {splitType === 'individual' && isSelected && (
-                                                <div className="flex items-center gap-1 border-l border-stone-200 pl-2 ml-2"><span className="text-[10px] text-stone-400">$</span><input type="number" value={customAmounts[u.id] || ''} onChange={e => setCustomAmounts({...customAmounts, [u.id]: e.target.value})} className="w-24 bg-transparent text-xs font-mono text-stone-800 focus:outline-none text-right" placeholder="0" /></div>
+            
+            {/* Records List */}
+            <div className="p-4 space-y-3 pb-24 relative">
+                {connectionStatus && isSyncMode && !connectionStatus.includes('❌') && (
+                    <div className="absolute inset-0 bg-[#F9F9F7]/60 z-20 flex flex-col items-center justify-center text-stone-500 min-h-[100px]"><Loader2 size={24} className="animate-spin text-emerald-600 mb-2" /><span className="text-xs font-bold">{connectionStatus}</span></div>
+                )}
+                {filteredExpenses.length === 0 ? (
+                    <div className="h-40 flex flex-col items-center justify-center text-stone-300 opacity-50"><Receipt size={32} className="mb-2" /><p className="text-xs font-medium">尚無符合的消費紀錄</p></div>
+                ) : (
+                    filteredExpenses.map(e => {
+                        const Cat = CATEGORIES.find(c => c.id === e.category) || CATEGORIES[3];
+                        const pName = users.find(u => u.id === e.paidBy)?.name || '未知';
+                        const dateObj = TRIP_DATES.find(d => d.value === e.date);
+                        const dStr = dateObj ? dateObj.label.split(' ')[0] : (e.date ? e.date.substring(5).replace('-', '/') : '??/??');
+                        
+                        return (
+                            <div key={e.id} className={`bg-white p-3 rounded-xl border shadow-sm flex items-center justify-between transition-all ${e.isSettled ? 'bg-stone-50 border-stone-100 opacity-60' : 'hover:shadow-md border-white'}`}>
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${e.isSettled ? 'bg-stone-200 text-stone-500' : `${Cat.bg} ${Cat.color}`}`}>
+                                        {e.isSettled ? <Check size={18} /> : <Cat.icon size={18} />}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <h4 className={`text-sm font-bold truncate ${e.isSettled ? 'text-stone-500' : 'text-stone-800'}`}>
+                                            {e.title}
+                                        </h4>
+                                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                            <span className="text-[10px] font-bold bg-stone-100 px-1.5 py-0.5 rounded text-stone-500 whitespace-nowrap">{dStr}</span>
+                                            <span className="text-[10px] font-bold flex items-center gap-0.5 text-stone-600 max-w-[80px] truncate"><User size={8} className="flex-shrink-0" />{pName} 付</span>
+                                            {e.isSettled ? (
+                                                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 flex items-center gap-1 shadow-sm animate-fade-in"><Check size={8} /> 已結清</span>
+                                            ) : (
+                                                <>
+                                                    {e.splitType === 'individual' && <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1 py-0.5 rounded border border-orange-100 whitespace-nowrap">各付各</span>}
+                                                    {e.splitType === 'self' && <span className="text-[10px] font-bold text-stone-500 bg-stone-100 px-1 py-0.5 rounded border border-stone-200 whitespace-nowrap">自費</span>}
+                                                </>
                                             )}
                                         </div>
-                                    );
-                                })}
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end flex-shrink-0 ml-4">
+                                    <span className={`text-sm font-bold font-mono ${e.isSettled ? 'text-stone-500' : 'text-stone-800'}`}>NT${e.amount.toLocaleString()}</span>
+                                    {!e.isSettled ? (
+                                        <div className="flex gap-2 mt-2">
+                                            <button onClick={() => handleEdit(e)} className="p-1 text-stone-300 hover:text-stone-600 transition-colors"><Pencil size={12} /></button>
+                                            <button onClick={() => handleDelete(e.id)} className="p-1 text-stone-300 hover:text-red-500 transition-colors"><Trash2 size={12} /></button>
+                                        </div>
+                                    ) : (
+                                        <span className="text-[9px] font-bold text-emerald-600 mt-2">Settled</span>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        );
+                    })
                 )}
             </div>
+        </div>
+        {/* --- SCROLLABLE CONTENT END --- */}
 
-            <div className="flex gap-2 pt-2">
-                <button onClick={() => setSelectedDate(getTodayString())} className="flex-1 bg-stone-100 text-stone-600 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2"><Calendar size={14} /> 今天</button>
-                <button onClick={handleSave} disabled={!title || !amount} className={`flex-[2] text-white py-3 rounded-xl text-xs font-bold shadow-md flex items-center justify-center gap-2 transition-transform active:scale-95 ${editingId ? 'bg-orange-600' : (isSyncMode ? 'bg-emerald-600' : 'bg-stone-800')}`}>{editingId ? <Pencil size={16} /> : <Plus size={16} />} {editingId ? '更新紀錄' : '確認新增'}</button>
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Bar */}
-        <div className="px-4 py-3 bg-white border-b border-stone-200 space-y-3 sticky top-0 z-10">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2"><ListFilter size={14} className="text-stone-400" /><span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">篩選條件</span></div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-                <div className="relative">
-                    <select 
-                        value={filterDate} 
-                        onChange={(e) => setFilterDate(e.target.value)}
-                        className="w-full bg-stone-50 border border-stone-200 rounded-lg pl-3 pr-8 py-2.5 text-[11px] font-bold text-stone-700 appearance-none outline-none focus:border-stone-400 transition-colors"
-                    >
-                        <option value="all">所有日期</option>
-                        {TRIP_DATES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-                    </select>
-                    <CalendarDays size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
-                </div>
-                <div className="relative">
-                    <select 
-                        value={filterPayer} 
-                        onChange={(e) => setFilterPayer(e.target.value)}
-                        className="w-full bg-stone-50 border border-stone-200 rounded-lg pl-3 pr-8 py-2.5 text-[11px] font-bold text-stone-700 appearance-none outline-none focus:border-stone-400 transition-colors"
-                    >
-                        <option value="all">所有付款人</option>
-                        {users.map(u => <option key={u.id} value={u.id}>{u.name} 付款</option>)}
-                    </select>
-                    <User size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
-                </div>
-            </div>
-        </div>
-        
-        {/* Records List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#F9F9F7] pb-24 relative">
-            {connectionStatus && isSyncMode && !connectionStatus.includes('❌') && (
-                <div className="absolute inset-0 bg-[#F9F9F7]/60 z-20 flex flex-col items-center justify-center text-stone-500"><Loader2 size={24} className="animate-spin text-emerald-600 mb-2" /><span className="text-xs font-bold">{connectionStatus}</span></div>
-            )}
-            {filteredExpenses.length === 0 ? (
-                <div className="h-40 flex flex-col items-center justify-center text-stone-300 opacity-50"><Receipt size={32} className="mb-2" /><p className="text-xs font-medium">尚無符合的消費紀錄</p></div>
-            ) : (
-                filteredExpenses.map(e => {
-                    const Cat = CATEGORIES.find(c => c.id === e.category) || CATEGORIES[3];
-                    const pName = users.find(u => u.id === e.paidBy)?.name || '未知';
-                    const dateObj = TRIP_DATES.find(d => d.value === e.date);
-                    const dStr = dateObj ? dateObj.label.split(' ')[0] : (e.date ? e.date.substring(5).replace('-', '/') : '??/??');
-                    
-                    return (
-                        <div key={e.id} className={`bg-white p-3 rounded-xl border shadow-sm flex items-center justify-between transition-all ${e.isSettled ? 'bg-stone-50 border-stone-100 opacity-60' : 'hover:shadow-md border-white'}`}>
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${e.isSettled ? 'bg-stone-200 text-stone-500' : `${Cat.bg} ${Cat.color}`}`}>
-                                    {e.isSettled ? <Check size={18} /> : <Cat.icon size={18} />}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <h4 className={`text-sm font-bold truncate ${e.isSettled ? 'text-stone-500' : 'text-stone-800'}`}>
-                                        {e.title}
-                                    </h4>
-                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                        <span className="text-[10px] font-bold bg-stone-100 px-1.5 py-0.5 rounded text-stone-500 whitespace-nowrap">{dStr}</span>
-                                        <span className="text-[10px] font-bold flex items-center gap-0.5 text-stone-600 max-w-[80px] truncate"><User size={8} className="flex-shrink-0" />{pName} 付</span>
-                                        {e.isSettled ? (
-                                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 flex items-center gap-1 shadow-sm animate-fade-in"><Check size={8} /> 已結清</span>
-                                        ) : (
-                                            <>
-                                                {e.splitType === 'individual' && <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1 py-0.5 rounded border border-orange-100 whitespace-nowrap">各付各</span>}
-                                                {e.splitType === 'self' && <span className="text-[10px] font-bold text-stone-500 bg-stone-100 px-1 py-0.5 rounded border border-stone-200 whitespace-nowrap">自費</span>}
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex flex-col items-end flex-shrink-0 ml-4">
-                                <span className={`text-sm font-bold font-mono ${e.isSettled ? 'text-stone-500' : 'text-stone-800'}`}>NT${e.amount.toLocaleString()}</span>
-                                {!e.isSettled ? (
-                                    <div className="flex gap-2 mt-2">
-                                        <button onClick={() => handleEdit(e)} className="p-1 text-stone-300 hover:text-stone-600 transition-colors"><Pencil size={12} /></button>
-                                        <button onClick={() => handleDelete(e.id)} className="p-1 text-stone-300 hover:text-red-500 transition-colors"><Trash2 size={12} /></button>
-                                    </div>
-                                ) : (
-                                    <span className="text-[9px] font-bold text-emerald-600 mt-2">Settled</span>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })
-            )}
-        </div>
       </div>
-      {isOpen && <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-[2px] z-40" onClick={onRequestClose} />}
+      {isOpen && <div className="fixed inset-0 bg-stone-900/20 backdrop-blur-[2px] z-40 touch-none" onClick={onRequestClose} />}
     </>
   );
 });

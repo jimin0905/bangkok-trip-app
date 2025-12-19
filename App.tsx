@@ -98,15 +98,15 @@ const App: React.FC = () => {
         <header className="sticky top-0 z-30 bg-[#F9F9F7]/95 backdrop-blur-sm border-b border-gray-100/50">
             <div className="max-w-2xl mx-auto px-6 h-20 flex items-center justify-between relative">
                 <div className="w-10"></div>
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center flex-1 px-2">
                     <span className="text-[10px] uppercase tracking-[0.2em] text-stone-400 mb-1">Travel Guide</span>
-                    <h1 className="text-xl font-bold text-stone-800 tracking-wide font-serif">
-                    MALAYSIA & BANGKOK TRIP
+                    <h1 className="text-[15px] sm:text-xl font-bold text-stone-800 tracking-wide font-serif text-center leading-snug">
+                    MALAYSIA &<br className="sm:hidden" /> BANGKOK TRIP
                     </h1>
                 </div>
                 <button 
                   onClick={() => { setTempSettings(tripSettings); setIsSettingsOpen(true); }}
-                  className="p-2 text-stone-400 hover:text-stone-800 transition-colors"
+                  className="p-2 text-stone-400 hover:text-stone-800 transition-colors w-10 flex justify-end"
                 >
                   <Settings size={20} />
                 </button>
