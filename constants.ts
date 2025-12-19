@@ -1,13 +1,176 @@
+
 import { DayPlan } from './types';
 
 export const ITINERARY_DATA: DayPlan[] = [
+  // --- 馬來西亞行程 (New) ---
   {
     id: 1,
-    dateLabel: "Day 1 • 12/24 (三)",
+    dateLabel: "Day 1 • 12/20 (六)",
+    title: "啟程前往吉隆坡",
+    subtitle: "台灣 ✈️ 吉隆坡｜Mamak 體驗",
+    // Image: KL Airport / Airplane
+    image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80",
+    imgPos: "center 50%",
+    activities: [
+      {
+        time: "07:00",
+        title: "抵達機場報到",
+        description: "預計 09:20 起飛。建議預留充裕時間辦理登機與安檢。",
+        location: "Taoyuan International Airport",
+        category: "transport",
+        tags: [{ label: "航班:TW Flight", type: "tip" }]
+      },
+      {
+        time: "16:00",
+        title: "抵達吉隆坡 (KLIA)",
+        description: "預計 15:30 ~ 16:00 出關，準備前往市區。",
+        location: "Kuala Lumpur International Airport",
+        category: "transport",
+        tags: [{ label: "入境手續", type: "nav" }]
+      },
+      {
+        time: "晚上",
+        title: "道地 Mamak 晚餐",
+        description: "體驗馬來西亞國民美食。推薦嘗試烤餅 (Naan) 或沙嗲 (Satay)。",
+        location: "Jalan Alor", 
+        category: "food",
+        tags: [
+          { label: "必吃:Naan", type: "must-eat" },
+          { label: "必吃:Satay", type: "must-eat" }
+        ]
+      }
+    ]
+  },
+  {
+    id: 2,
+    dateLabel: "Day 2 • 12/21 (日)",
+    title: "馬六甲古城巡禮",
+    subtitle: "世界文化遺產一日遊",
+    // Image: Melaka Red Square / Church
+    image: "https://images.unsplash.com/photo-1581007871115-f14bc016e0a4?auto=format&fit=crop&w=800&q=80",
+    imgPos: "center 50%",
+    activities: [
+      {
+        time: "上午",
+        title: "傳統茶室早餐",
+        description: "前往 Kopi Diem 享用道地早餐。",
+        location: "Kopi Diem",
+        category: "food",
+        tags: [{ label: "必點:Kaya Toast", type: "must-eat" }]
+      },
+      {
+        time: "中午",
+        title: "前往馬六甲",
+        description: "開車前往馬六甲 (Drive to Malaka)，車程約 2-2.5 小時。",
+        location: "Melaka",
+        category: "transport",
+        tags: [{ label: "自駕移動", type: "nav" }]
+      },
+      {
+        time: "下午",
+        title: "馬六甲市區觀光",
+        description: "遊覽荷蘭紅屋、雞場街等歷史景點。",
+        location: "Dutch Square (Red Square) Melaka",
+        category: "sightseeing",
+        tags: [{ label: "世界遺產", type: "tip" }]
+      },
+      {
+        time: "晚上",
+        title: "雞場街夜市",
+        description: "Jonker Walk Night Market，感受熱鬧氛圍與街頭美食。",
+        location: "Jonker Street Night Market",
+        category: "food",
+        tags: [{ label: "週末限定", type: "tip" }]
+      },
+      {
+        time: "住宿",
+        title: "Swiss Heritage Hotel",
+        description: "入住充滿歷史風情的飯店。",
+        location: "Swiss Heritage Hotel Melaka",
+        category: "relax",
+        tags: [{ label: "特色住宿", type: "tip" }]
+      }
+    ]
+  },
+  {
+    id: 3,
+    dateLabel: "Day 3 • 12/22 (一)",
+    title: "重返吉隆坡",
+    subtitle: "城市漫步 KL City Walk",
+    // Image: KL Petronas Towers (Stable Source)
+    image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?auto=format&fit=crop&w=800&q=80",
+    imgPos: "center 30%",
+    activities: [
+      {
+        time: "上午",
+        title: "馬六甲悠閒早餐",
+        description: "在古城區享用早餐 (Malaka Cafe Breakfast)。",
+        location: "Melaka",
+        category: "food"
+      },
+      {
+        time: "下午",
+        title: "返回吉隆坡",
+        description: "開車返回吉隆坡市區 (Malaka drive to KL)。",
+        location: "Kuala Lumpur",
+        category: "transport"
+      },
+      {
+        time: "傍晚",
+        title: "吉隆坡市區漫步",
+        description: "KL City Walk，探索雙子星塔周邊或武吉免登區。",
+        location: "Pavilion Kuala Lumpur",
+        category: "sightseeing",
+        tags: [{ label: "城市夜景", type: "tip" }]
+      },
+      {
+        time: "住宿",
+        title: "KL City Airbnb",
+        description: "入住吉隆坡市中心 Airbnb。",
+        location: "Kuala Lumpur City Centre",
+        category: "relax",
+        tags: [{ label: "市中心", type: "nav" }]
+      }
+    ]
+  },
+  {
+    id: 4,
+    dateLabel: "Day 4 • 12/23 (二)",
+    title: "吉隆坡購物日",
+    subtitle: "商場採買與移動",
+    // Image: Modern Mall Interior
+    image: "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&w=800&q=80",
+    imgPos: "center 50%",
+    activities: [
+      {
+        time: "上午",
+        title: "移動至外圍區域",
+        description: "從市中心移動到吉隆坡外圍 (City to KL Outskirt)。",
+        category: "transport"
+      },
+      {
+        time: "下午",
+        title: "商場購物採買",
+        description: "在路途中的 Mall 逛街與採買戰利品 (Purchase!)。",
+        category: "shopping",
+        tags: [{ label: "採購日", type: "must-buy" }]
+      },
+      {
+        time: "晚上",
+        title: "自由活動",
+        description: "整理行李，準備隔天前往泰國。",
+        category: "relax"
+      }
+    ]
+  },
+
+  // --- 原有曼谷行程 (順延並更新日期) ---
+  {
+    id: 5,
+    dateLabel: "Day 5 • 12/24 (三)",
     title: "抵達曼谷與河畔饗宴",
-    subtitle: "抵達日｜平安夜大餐",
+    subtitle: "轉機抵達｜平安夜大餐",
     // Image: Luxury Dining / Night View
-    // imgPos: 'center 30%'
     image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=800&q=80",
     imgPos: "center 30%", 
     activities: [
@@ -40,12 +203,11 @@ export const ITINERARY_DATA: DayPlan[] = [
     ]
   },
   {
-    id: 2,
-    dateLabel: "Day 2 • 12/25 (四)",
+    id: 6,
+    dateLabel: "Day 6 • 12/25 (四)",
     title: "河岸文化巡禮",
     subtitle: "聖誕節古蹟巡禮",
     // Image: Wat Arun Details
-    // Adjusted to 70% to show the body of the monument instead of the sky/spire tip
     image: "https://images.unsplash.com/photo-1563492065599-3520f775eeed?auto=format&fit=crop&w=800&q=80",
     imgPos: "center 70%",
     activities: [
@@ -94,11 +256,11 @@ export const ITINERARY_DATA: DayPlan[] = [
     ]
   },
   {
-    id: 3,
-    dateLabel: "Day 3 • 12/26 (五)",
+    id: 7,
+    dateLabel: "Day 7 • 12/26 (五)",
     title: "精緻美食與購物",
     subtitle: "CentralWorld 男裝與美食攻略",
-    // Image: Tom Yum / Thai Food (Show more of the bowl)
+    // Image: Tom Yum / Thai Food
     image: "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=800&q=80",
     imgPos: "center 40%",
     activities: [
@@ -138,8 +300,8 @@ export const ITINERARY_DATA: DayPlan[] = [
     ]
   },
   {
-    id: 4,
-    dateLabel: "Day 4 • 12/27 (六)",
+    id: 8,
+    dateLabel: "Day 8 • 12/27 (六)",
     title: "文青咖啡與暹羅商圈",
     subtitle: "Siam Square 潮流挖掘",
     // Image: Coffee / Cafe
@@ -184,8 +346,8 @@ export const ITINERARY_DATA: DayPlan[] = [
     ]
   },
   {
-    id: 5,
-    dateLabel: "Day 5 • 12/28 (日)",
+    id: 9,
+    dateLabel: "Day 9 • 12/28 (日)",
     title: "恰圖恰與新地標",
     subtitle: "週末市集最終場",
     // Image: Market Vibe
@@ -228,12 +390,11 @@ export const ITINERARY_DATA: DayPlan[] = [
     ]
   },
   {
-    id: 6,
-    dateLabel: "Day 6 • 12/29 (一)",
+    id: 10,
+    dateLabel: "Day 10 • 12/29 (一)",
     title: "告別曼谷",
     subtitle: "收尾日",
     // Image: Travel / Plane
-    // Adjusted to 60% to show more of the wing (balanced view)
     image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80",
     imgPos: "center 60%",
     activities: [

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react';
-import { Wallet, Plus, X, Trash2, ShoppingBag, Utensils, Bus, MoreHorizontal, Cloud, CloudOff, LogOut, LogIn, User, CheckCircle2, ArrowRightLeft, Users, MinusCircle, Loader2, ListFilter, ChevronUp, ChevronDown, Calendar, CalendarDays, Pencil, ArrowDownLeft, Check, AlertCircle, Receipt, CreditCard, Banknote, Settings } from 'lucide-react';
+import { Wallet, Plus, X, Trash2, ShoppingBag, Utensils, Bus, MoreHorizontal, Cloud, CloudOff, LogOut, LogIn, User, CheckCircle2, ArrowRightLeft, Users, MinusCircle, Loader2, ListFilter, ChevronUp, ChevronDown, Calendar, CalendarDays, Pencil, ArrowDownLeft, Check, AlertCircle, Receipt, CreditCard, Banknote, Settings, Calculator, RefreshCw } from 'lucide-react';
 import { Expense, UserProfile, TripSettings } from '../types';
 import { syncService } from '../services/firebase';
 
@@ -10,6 +10,12 @@ const CATEGORIES = [
   { id: 'transport', label: '交通', icon: Bus, color: 'text-blue-600', bg: 'bg-blue-50' },
   { id: 'other', label: '其他', icon: MoreHorizontal, color: 'text-gray-600', bg: 'bg-gray-50' },
 ] as const;
+
+// 預設參考匯率 (若無法抓取即時資料時使用)
+const DEFAULT_RATES = {
+    THB: 0.94, // 1 泰銖 約 0.94 台幣
+    MYR: 7.35  // 1 馬幣 約 7.35 台幣
+};
 
 interface Props {
     isOpen: boolean;
@@ -33,6 +39,23 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
   const [tempPin, setTempPin] = useState('');
   const [showAuth, setShowAuth] = useState(false);
   const [firebaseError, setFirebaseError] = useState(false);
+
+  // 匯率計算機 State
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [calcCurrency, setCalcCurrency] = useState<'THB' | 'MYR'>('THB');
+  const [calcAmount, setCalcAmount] = useState('');
+  const [currentRate, setCurrentRate] = useState<number>(DEFAULT_RATES.THB);
+  
+  // 當切換幣別時，更新預設匯率
+  useEffect(() => {
+    setCurrentRate(DEFAULT_RATES[calcCurrency]);
+  }, [calcCurrency]);
+
+  const calculatedTWD = useMemo(() => {
+      const val = parseFloat(calcAmount);
+      if (isNaN(val)) return 0;
+      return Math.round(val * currentRate);
+  }, [calcAmount, currentRate]);
 
   // 暴露方法給 App 元件呼叫
   useImperativeHandle(ref, () => ({
@@ -352,11 +375,13 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
               <div>
                   <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold mb-1">Trip Total Spending</p>
                   <div className="flex items-baseline gap-1">
-                      <span className="text-lg font-light opacity-60">฿</span>
+                      <span className="text-lg font-light opacity-60">NT$</span>
                       <h2 className="text-4xl font-bold tracking-tight">{stats.totalCost.toLocaleString()}</h2>
                   </div>
               </div>
               <div className="flex gap-2">
+                  {/* Currency Converter Button */}
+                  <button onClick={() => setShowCalculator(!showCalculator)} className={`p-2 rounded-full transition-colors ${showCalculator ? 'bg-orange-500 text-white' : 'bg-white/10 text-white'}`}><Calculator size={20} /></button>
                   <button onClick={() => setShowUserManage(!showUserManage)} className={`p-2 rounded-full transition-colors ${showUserManage ? 'bg-white text-stone-900' : 'bg-white/10 text-white'}`}><Users size={20} /></button>
                   {isSyncMode ? <button onClick={handleLogout} className="p-2 rounded-full bg-red-500/20 text-red-200"><LogOut size={20} /></button> : <button onClick={() => setShowAuth(true)} className="p-2 rounded-full bg-white/10"><CloudOff size={20} /></button>}
                   <button onClick={onRequestClose} className="p-2 rounded-full bg-white/10"><X size={20} /></button>
@@ -376,17 +401,73 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
                           <div className="space-y-2">
                               <div className="flex flex-col">
                                   <span className="text-[10px] text-white/40 uppercase font-bold flex items-center gap-1"><Banknote size={10} /> 先出 (代墊)</span>
-                                  <span className="text-sm font-bold font-mono">฿{(stats.userPaidTotal[u.id] || 0).toLocaleString()}</span>
+                                  <span className="text-sm font-bold font-mono">NT${(stats.userPaidTotal[u.id] || 0).toLocaleString()}</span>
                               </div>
                               <div className="flex flex-col">
                                   <span className="text-[10px] text-white/40 uppercase font-bold flex items-center gap-1"><CreditCard size={10} /> 個人花費</span>
-                                  <span className="text-sm font-bold font-mono text-white/90">฿{(stats.userConsumedTotal[u.id] || 0).toLocaleString()}</span>
+                                  <span className="text-sm font-bold font-mono text-white/90">NT${(stats.userConsumedTotal[u.id] || 0).toLocaleString()}</span>
                               </div>
                           </div>
                       </div>
                   ))}
               </div>
           </div>
+
+          {/* Currency Calculator Modal (Embedded) */}
+          {showCalculator && (
+              <div className="mt-4 bg-white/95 rounded-xl p-4 animate-fade-in relative z-20 text-stone-800 shadow-lg">
+                  <div className="flex justify-between items-center mb-3 border-b border-stone-100 pb-2">
+                      <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-2">
+                          <Calculator size={14} /> 匯率換算
+                      </h4>
+                      <button onClick={() => setShowCalculator(false)} className="text-stone-400 hover:text-stone-600"><X size={16} /></button>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-3">
+                     <button 
+                        onClick={() => setCalcCurrency('THB')} 
+                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg border transition-colors ${calcCurrency === 'THB' ? 'bg-orange-100 border-orange-200 text-orange-700' : 'bg-stone-50 border-stone-100 text-stone-400'}`}
+                     >
+                        泰銖 (THB)
+                     </button>
+                     <button 
+                        onClick={() => setCalcCurrency('MYR')} 
+                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg border transition-colors ${calcCurrency === 'MYR' ? 'bg-blue-100 border-blue-200 text-blue-700' : 'bg-stone-50 border-stone-100 text-stone-400'}`}
+                     >
+                        馬幣 (MYR)
+                     </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div>
+                          <label className="block text-[10px] font-bold text-stone-400 mb-1">{calcCurrency} 金額</label>
+                          <input 
+                              type="number" 
+                              value={calcAmount} 
+                              onChange={(e) => setCalcAmount(e.target.value)} 
+                              className="w-full bg-stone-50 border border-stone-200 rounded-lg px-2 py-2 text-sm font-mono font-bold focus:outline-none focus:border-stone-400"
+                              placeholder="0"
+                              autoFocus
+                          />
+                      </div>
+                      <div>
+                          <label className="block text-[10px] font-bold text-stone-400 mb-1">匯率 (可修改)</label>
+                          <input 
+                              type="number" 
+                              value={currentRate} 
+                              onChange={(e) => setCurrentRate(parseFloat(e.target.value))} 
+                              className="w-full bg-stone-50 border border-stone-200 rounded-lg px-2 py-2 text-sm font-mono text-stone-500 focus:outline-none focus:border-stone-400"
+                          />
+                      </div>
+                  </div>
+
+                  <div className="bg-stone-100 rounded-lg p-3 flex justify-between items-center">
+                      <span className="text-xs font-bold text-stone-500">約合台幣</span>
+                      <span className="text-lg font-bold font-mono text-stone-800">NT$ {calculatedTWD.toLocaleString()}</span>
+                  </div>
+                  <p className="text-[10px] text-stone-400 mt-2 text-right">來源: 預設參考匯率 (可依實際換匯調整)</p>
+              </div>
+          )}
 
           {showUserManage && (
               <div className="mt-4 bg-black/20 rounded-xl p-3 animate-fade-in relative z-20">
@@ -418,7 +499,7 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
                              {stats.debts.map(d => (
                                  <div key={d.name} className="flex justify-between items-center text-xs">
                                      <span className="font-bold text-stone-700">{d.name}</span>
-                                     <span className="text-red-500 font-bold flex items-center gap-1"><ArrowDownLeft size={10} /> 需支付 ฿{Math.floor(d.amount).toLocaleString()}</span>
+                                     <span className="text-red-500 font-bold flex items-center gap-1"><ArrowDownLeft size={10} /> 需支付 NT${Math.floor(d.amount).toLocaleString()}</span>
                                  </div>
                              ))}
                          </div>
@@ -446,7 +527,7 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
         <button onClick={() => (isFormExpanded && editingId ? resetForm() : setIsFormExpanded(!isFormExpanded))} className="w-full bg-white border-b border-stone-100 p-4 flex items-center justify-between hover:bg-stone-50 z-20 relative">
             <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-full ${isFormExpanded ? (editingId ? 'bg-orange-500 text-white' : 'bg-stone-800 text-white') : 'bg-stone-100 text-stone-400'}`}>{editingId ? <Pencil size={14} /> : <Plus size={14} />}</div>
-                <span className="text-xs font-bold text-stone-700 uppercase tracking-widest">{editingId ? '編輯消費' : (isFormExpanded ? '取消' : '記一筆')}</span>
+                <span className="text-xs font-bold text-stone-700 uppercase tracking-widest">{editingId ? '編輯消費' : (isFormExpanded ? '取消' : '記一筆 (NT$)')}</span>
             </div>
             {isFormExpanded ? <ChevronUp size={16} className="text-stone-400" /> : <ChevronDown size={16} className="text-stone-400" />}
         </button>
@@ -460,7 +541,7 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
                     <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="例如：按摩、晚餐..." className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm" />
                 </div>
                 <div>
-                    <label className="block text-[10px] font-bold text-stone-400 uppercase mb-1">總額</label>
+                    <label className="block text-[10px] font-bold text-stone-400 uppercase mb-1">金額 (NT$)</label>
                     <input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" className="w-full bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm font-mono" />
                 </div>
             </div>
@@ -519,7 +600,7 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
                                     <div key={u.id} className={`flex items-center justify-between p-2 rounded-xl border transition-all ${isSelected ? 'bg-stone-50 border-stone-200' : 'bg-white border-stone-100 opacity-60'}`}>
                                         <button onClick={() => toggleParticipant(u.id)} className="flex items-center gap-2 flex-1"><div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-colors ${isSelected ? 'bg-stone-800 border-stone-800' : 'border-stone-300'}`}>{isSelected && <Check size={10} className="text-white" />}</div><span className="text-xs font-bold text-stone-700">{u.name}</span></button>
                                         {splitType === 'individual' && isSelected && (
-                                            <div className="flex items-center gap-1 border-l border-stone-200 pl-2 ml-2"><span className="text-[10px] text-stone-400">฿</span><input type="number" value={customAmounts[u.id] || ''} onChange={e => setCustomAmounts({...customAmounts, [u.id]: e.target.value})} className="w-16 bg-transparent text-xs font-mono text-stone-800 focus:outline-none" placeholder="0" /></div>
+                                            <div className="flex items-center gap-1 border-l border-stone-200 pl-2 ml-2"><span className="text-[10px] text-stone-400">$</span><input type="number" value={customAmounts[u.id] || ''} onChange={e => setCustomAmounts({...customAmounts, [u.id]: e.target.value})} className="w-16 bg-transparent text-xs font-mono text-stone-800 focus:outline-none" placeholder="0" /></div>
                                         )}
                                     </div>
                                 );
@@ -606,7 +687,7 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
                                 </div>
                             </div>
                             <div className="flex flex-col items-end flex-shrink-0 ml-4">
-                                <span className={`text-sm font-bold font-mono ${e.isSettled ? 'text-stone-500' : 'text-stone-800'}`}>฿{e.amount.toLocaleString()}</span>
+                                <span className={`text-sm font-bold font-mono ${e.isSettled ? 'text-stone-500' : 'text-stone-800'}`}>NT${e.amount.toLocaleString()}</span>
                                 {!e.isSettled ? (
                                     <div className="flex gap-2 mt-2">
                                         <button onClick={() => handleEdit(e)} className="p-1 text-stone-300 hover:text-stone-600 transition-colors"><Pencil size={12} /></button>

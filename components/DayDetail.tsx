@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { DayPlan, ActivityCategory, SmartTag } from '../types';
 import { ArrowLeft, MapPin, Clock, Utensils, Camera, ShoppingBag, Bus, CloudSun, ImageOff } from 'lucide-react';
@@ -31,16 +32,23 @@ const TagBadge: React.FC<{ tag: SmartTag }> = ({ tag }) => {
     );
 };
 
-// Weather data for Dec 24 - Dec 29
+// Weather data for Dec 20 - Dec 29 (Malaysia + Bangkok)
 const getWeatherForecast = (dayId: number) => {
     switch(dayId) {
-        case 1: return "☀️ 12/24 (三) 晴時多雲，24-32°C。平安夜抵達，天氣舒適，適合短袖搭配薄外套。";
-        case 2: return "☀️ 12/25 (四) 晴朗炎熱，25-33°C。聖誕節戶外行程多，注意防曬與補充水分。";
-        case 3: return "🌤️ 12/26 (五) 多雲時晴，26-34°C。百貨商圈冷氣較強，建議攜帶薄外套。";
-        case 4: return "☁️ 12/27 (六) 多雲偶雨，25-33°C。Siam 商圈人潮多，天氣悶熱，建議穿著輕便。";
-        case 5: return "☀️ 12/28 (日) 晴時多雲，24-32°C。恰圖恰市集非常炎熱，務必穿著透氣並隨時補充水分。";
-        case 6: return "🌤️ 12/29 (一) 晴朗舒適，23-32°C。返程日建議穿著寬鬆舒適，並準備外套應對機場溫差。";
-        default: return "☀️ 曼谷12月為涼季，平均氣溫 24-32°C，氣候乾爽舒適，適合旅遊。";
+        // Malaysia Segment
+        case 1: return "⛈️ 12/20 (六) 吉隆坡 多雲有雨，24-32°C。抵達時可能有午後雷陣雨，建議隨身攜帶雨具。";
+        case 2: return "☀️ 12/21 (日) 馬六甲 晴時多雲，25-33°C。古城區步行較多，天氣炎熱，請注意防曬與補水。";
+        case 3: return "🌤️ 12/22 (一) 吉隆坡 多雲時晴，25-33°C。市區漫步舒適，但仍需留意傍晚陣雨。";
+        case 4: return "☁️ 12/23 (二) 吉隆坡 多雲，24-32°C。大部分時間在商場與車內，穿著輕便舒適即可。";
+        
+        // Bangkok Segment (Shifted IDs)
+        case 5: return "☀️ 12/24 (三) 曼谷 晴時多雲，24-32°C。平安夜抵達，天氣舒適，適合短袖搭配薄外套。";
+        case 6: return "☀️ 12/25 (四) 曼谷 晴朗炎熱，25-33°C。聖誕節戶外行程多，注意防曬與補充水分。";
+        case 7: return "🌤️ 12/26 (五) 曼谷 多雲時晴，26-34°C。百貨商圈冷氣較強，建議攜帶薄外套。";
+        case 8: return "☁️ 12/27 (六) 曼谷 多雲偶雨，25-33°C。Siam 商圈人潮多，天氣悶熱，建議穿著輕便。";
+        case 9: return "☀️ 12/28 (日) 曼谷 晴時多雲，24-32°C。恰圖恰市集非常炎熱，務必穿著透氣並隨時補充水分。";
+        case 10: return "🌤️ 12/29 (一) 曼谷 晴朗舒適，23-32°C。返程日建議穿著寬鬆舒適，並準備外套應對機場溫差。";
+        default: return "☀️ 東南亞12月為雨季末期或涼季，氣溫平均 24-33°C，建議攜帶雨具與薄外套。";
     }
 };
 

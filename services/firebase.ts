@@ -1,5 +1,5 @@
 
-import { initializeApp, FirebaseApp } from "firebase/app";
+import firebase from "firebase/compat/app";
 import { getDatabase, ref, set, remove, update, onValue, off, Database } from "firebase/database";
 import { getAuth, signInAnonymously, onAuthStateChanged, Auth } from "firebase/auth";
 import { Expense, UserProfile, TripSettings } from "../types";
@@ -71,14 +71,14 @@ if (rawConfig) {
     }
 }
 
-let app: FirebaseApp | undefined;
+let app: any;
 let db: Database | undefined;
 let auth: Auth | undefined;
 let isInitialized = false;
 
 try {
     if (firebaseConfig && (firebaseConfig.apiKey || firebaseConfig.databaseURL)) {
-        app = initializeApp(firebaseConfig);
+        app = firebase.initializeApp(firebaseConfig);
         db = getDatabase(app);
         auth = getAuth(app);
         isInitialized = true;

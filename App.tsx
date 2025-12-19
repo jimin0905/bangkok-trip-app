@@ -15,7 +15,7 @@ const App: React.FC = () => {
   
   const [tripSettings, setTripSettings] = useState<TripSettings>(() => {
     const saved = localStorage.getItem('bkk_trip_settings');
-    return saved ? JSON.parse(saved) : { startDate: '2025-12-24', endDate: '2025-12-29' };
+    return saved ? JSON.parse(saved) : { startDate: '2025-12-20', endDate: '2025-12-29' };
   });
 
   const [tempSettings, setTempSettings] = useState<TripSettings>(tripSettings);
@@ -101,7 +101,7 @@ const App: React.FC = () => {
                 <div className="flex flex-col items-center">
                     <span className="text-[10px] uppercase tracking-[0.2em] text-stone-400 mb-1">Travel Guide</span>
                     <h1 className="text-xl font-bold text-stone-800 tracking-wide font-serif">
-                    BANGKOK BLISS
+                    MALAYSIA & BANGKOK TRIP
                     </h1>
                 </div>
                 <button 
@@ -159,7 +159,7 @@ const App: React.FC = () => {
           <div className="px-6 py-8 animate-fade-in">
              <div className="mb-10 text-center">
                 <p className="text-stone-500 font-light leading-relaxed text-sm max-w-sm mx-auto">
-                    A curated journey through culture, flavors, and hidden gems in the heart of Thailand.
+                    A curated journey through Kuala Lumpur, Melaka, and Bangkok. Culture, shopping, and culinary delights await.
                 </p>
              </div>
             
