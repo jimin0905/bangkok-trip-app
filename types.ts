@@ -10,7 +10,7 @@ export interface Activity {
   time: string;
   title: string;
   description?: string;
-  location?: string; // For Google Maps query
+  location?: string;
   category: ActivityCategory;
   tags?: SmartTag[];
 }
@@ -20,8 +20,8 @@ export interface DayPlan {
   dateLabel: string;
   title: string;
   subtitle: string;
-  image: string; // Specific image URL for the day
-  imgPos?: string; // CSS object-position value (e.g., 'center 20%')
+  image: string;
+  imgPos?: string;
   activities: Activity[];
 }
 
@@ -37,18 +37,24 @@ export interface UserProfile {
   name: string;
 }
 
+export interface TripSettings {
+  startDate: string;
+  endDate: string;
+}
+
 export interface Expense {
   id: string;
   title: string;
   amount: number;
   category: 'food' | 'shopping' | 'transport' | 'other';
-  dayId: number; // 0 for general, 1-6 for specific days
-  date?: string; // YYYY-MM-DD format
+  dayId: number;
+  date?: string;
   timestamp: number;
-  paidBy: string; // The ID of the user who paid
-  involvedUsers: string[]; // List of User IDs who share this expense
-  splitType: 'split' | 'self' | 'other'; // split=Equal split among involved, self=Payer only
-  isSettled: boolean; // Has this been paid back?
+  paidBy: string;
+  involvedUsers: string[];
+  individualAmounts?: Record<string, number>;
+  splitType: 'split' | 'self' | 'individual';
+  isSettled: boolean;
 }
 
 export enum ViewState {
