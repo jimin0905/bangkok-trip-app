@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react';
-import { Wallet, Plus, X, Trash2, ShoppingBag, Utensils, Bus, MoreHorizontal, Cloud, CloudOff, LogOut, LogIn, User, CheckCircle2, ArrowRightLeft, Users, MinusCircle, Loader2, ListFilter, ChevronUp, ChevronDown, Calendar, CalendarDays, Pencil, ArrowDownLeft, Check, AlertCircle, Receipt, CreditCard, Banknote, Settings, Calculator, RefreshCw } from 'lucide-react';
+import { Wallet, Plus, X, Trash2, ShoppingBag, Utensils, Bus, MoreHorizontal, Cloud, CloudOff, LogOut, LogIn, User, CheckCircle2, ArrowRightLeft, Users, MinusCircle, Loader2, ListFilter, ChevronUp, ChevronDown, Calendar, CalendarDays, Pencil, ArrowDownLeft, Check, AlertCircle, Receipt, CreditCard, Banknote, Settings, Calculator, RefreshCw, Delete } from 'lucide-react';
 import { Expense, UserProfile, TripSettings } from '../types';
 import { syncService } from '../services/firebase';
 
@@ -11,7 +11,7 @@ const CATEGORIES = [
   { id: 'other', label: '其他', icon: MoreHorizontal, color: 'text-gray-600', bg: 'bg-gray-50' },
 ] as const;
 
-// 預設參考匯率 (若無法抓取即時資料時使用)
+// 預設參考匯率
 const DEFAULT_RATES = {
     THB: 0.94, // 1 泰銖 約 0.94 台幣
     MYR: 7.35  // 1 馬幣 約 7.35 台幣
@@ -40,22 +40,60 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
   const [showAuth, setShowAuth] = useState(false);
   const [firebaseError, setFirebaseError] = useState(false);
 
-  // 匯率計算機 State
-  const [showCalculator, setShowCalculator] = useState(false);
+  // 匯率計算機 State (原 showCalculator 改名為 showExchange 以區分)
+  const [showExchange, setShowExchange] = useState(false);
   const [calcCurrency, setCalcCurrency] = useState<'THB' | 'MYR'>('THB');
   const [calcAmount, setCalcAmount] = useState('');
-  const [currentRate, setCurrentRate] = useState<number>(DEFAULT_RATES.THB);
+
+  // 一般數學計算機 State
+  const [showSimpleCalc, setShowSimpleCalc] = useState(false);
+  const [simpleCalcDisplay, setSimpleCalcDisplay] = useState('');
   
-  // 當切換幣別時，更新預設匯率
+  // 匯率設定 (從 LocalStorage 讀取，若無則使用預設值)
+  const [exchangeRates, setExchangeRates] = useState<{THB: number, MYR: number}>(() => {
+      const saved = localStorage.getItem('bkk_exchange_rates');
+      return saved ? JSON.parse(saved) : DEFAULT_RATES;
+  });
+
+  // 當匯率變更時存入 LocalStorage
   useEffect(() => {
-    setCurrentRate(DEFAULT_RATES[calcCurrency]);
-  }, [calcCurrency]);
+      localStorage.setItem('bkk_exchange_rates', JSON.stringify(exchangeRates));
+  }, [exchangeRates]);
+
+  const currentRate = exchangeRates[calcCurrency];
+
+  const handleRateChange = (val: string) => {
+      const num = parseFloat(val);
+      setExchangeRates(prev => ({
+          ...prev,
+          [calcCurrency]: isNaN(num) ? 0 : num
+      }));
+  };
 
   const calculatedTWD = useMemo(() => {
       const val = parseFloat(calcAmount);
       if (isNaN(val)) return 0;
       return Math.round(val * currentRate);
   }, [calcAmount, currentRate]);
+
+  // 簡單計算機邏輯
+  const handleSimpleCalcInput = (val: string) => {
+    if (val === 'C') {
+        setSimpleCalcDisplay('');
+    } else if (val === 'Del') {
+        setSimpleCalcDisplay(prev => prev.slice(0, -1));
+    } else if (val === '=') {
+        try {
+            // eslint-disable-next-line no-eval
+            const result = eval(simpleCalcDisplay);
+            setSimpleCalcDisplay(String(result));
+        } catch (e) {
+            setSimpleCalcDisplay('Error');
+        }
+    } else {
+        setSimpleCalcDisplay(prev => prev + val);
+    }
+  };
 
   // 暴露方法給 App 元件呼叫
   useImperativeHandle(ref, () => ({
@@ -364,6 +402,27 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
       else setExpenses(prev => prev.map(e => ({ ...e, isSettled: true })));
   };
 
+  const calcButtons = [
+    { label: 'C', val: 'C', bg: 'bg-red-500/10 text-red-400 hover:bg-red-500/20' },
+    { label: 'Del', val: 'Del', bg: 'bg-stone-700 hover:bg-stone-600', icon: Delete },
+    { label: '/', val: '/', bg: 'bg-stone-700 hover:bg-stone-600' },
+    { label: '*', val: '*', bg: 'bg-stone-700 hover:bg-stone-600' },
+    { label: '7', val: '7' },
+    { label: '8', val: '8' },
+    { label: '9', val: '9' },
+    { label: '-', val: '-', bg: 'bg-stone-700 hover:bg-stone-600' },
+    { label: '4', val: '4' },
+    { label: '5', val: '5' },
+    { label: '6', val: '6' },
+    { label: '+', val: '+', bg: 'bg-stone-700 hover:bg-stone-600' },
+    { label: '1', val: '1' },
+    { label: '2', val: '2' },
+    { label: '3', val: '3' },
+    { label: '=', val: '=', bg: 'bg-orange-600 hover:bg-orange-500 text-white', tall: true },
+    { label: '0', val: '0', wide: true },
+    { label: '.', val: '.' },
+  ];
+
   return (
     <>
       <button onClick={onRequestOpen} className={`fixed bottom-8 right-6 z-50 bg-stone-800 text-white p-4 rounded-full shadow-lg transition-all duration-300 ${isOpen ? 'scale-0 opacity-0' : 'scale-100 opacity-100'}`}><Wallet size={24} /></button>
@@ -380,10 +439,14 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
                   </div>
               </div>
               <div className="flex gap-2">
-                  {/* Currency Converter Button */}
-                  <button onClick={() => setShowCalculator(!showCalculator)} className={`p-2 rounded-full transition-colors ${showCalculator ? 'bg-orange-500 text-white' : 'bg-white/10 text-white'}`}><Calculator size={20} /></button>
+                  {/* Buttons Group */}
+                  <button onClick={() => setShowSimpleCalc(!showSimpleCalc)} className={`p-2 rounded-full transition-colors ${showSimpleCalc ? 'bg-orange-500 text-white' : 'bg-white/10 text-white'}`}><Calculator size={20} /></button>
+                  <button onClick={() => setShowExchange(!showExchange)} className={`p-2 rounded-full transition-colors ${showExchange ? 'bg-orange-500 text-white' : 'bg-white/10 text-white'}`}><ArrowRightLeft size={20} /></button>
                   <button onClick={() => setShowUserManage(!showUserManage)} className={`p-2 rounded-full transition-colors ${showUserManage ? 'bg-white text-stone-900' : 'bg-white/10 text-white'}`}><Users size={20} /></button>
-                  {isSyncMode ? <button onClick={handleLogout} className="p-2 rounded-full bg-red-500/20 text-red-200"><LogOut size={20} /></button> : <button onClick={() => setShowAuth(true)} className="p-2 rounded-full bg-white/10"><CloudOff size={20} /></button>}
+                  {isSyncMode ? 
+                    <button onClick={handleLogout} className="p-2 rounded-full bg-red-500/20 text-red-200"><LogOut size={20} /></button> : 
+                    <button onClick={() => setShowAuth(!showAuth)} className={`p-2 rounded-full transition-colors ${showAuth ? 'bg-emerald-500 text-white' : 'bg-white/10'}`}><CloudOff size={20} /></button>
+                  }
                   <button onClick={onRequestClose} className="p-2 rounded-full bg-white/10"><X size={20} /></button>
               </div>
           </div>
@@ -413,14 +476,46 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
               </div>
           </div>
 
-          {/* Currency Calculator Modal (Embedded) */}
-          {showCalculator && (
+          {/* Simple Calculator Modal */}
+          {showSimpleCalc && (
+              <div className="mt-4 bg-stone-800 rounded-xl p-4 animate-fade-in relative z-20 text-white shadow-lg">
+                  <div className="flex justify-between items-center mb-3">
+                      <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider flex items-center gap-2">
+                          <Calculator size={14} /> 一般計算機
+                      </h4>
+                      <button onClick={() => setShowSimpleCalc(false)} className="text-stone-400 hover:text-white"><X size={16} /></button>
+                  </div>
+                  <div className="bg-stone-900 rounded-lg p-3 mb-3 text-right">
+                      <span className="text-2xl font-mono font-bold break-all min-h-[2.5rem]">{simpleCalcDisplay || '0'}</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                      {calcButtons.map(btn => (
+                          <button 
+                              key={btn.val}
+                              onClick={() => handleSimpleCalcInput(btn.val)}
+                              className={`p-3 rounded-lg font-bold text-lg transition-colors flex items-center justify-center ${
+                                  btn.wide ? 'col-span-2' : ''
+                              } ${
+                                  (btn as any).tall ? 'row-span-2' : ''
+                              } ${
+                                  btn.bg || 'bg-stone-700/50 hover:bg-stone-700'
+                              }`}
+                          >
+                              {btn.icon ? <btn.icon size={20} /> : btn.label}
+                          </button>
+                      ))}
+                  </div>
+              </div>
+          )}
+
+          {/* Exchange Rate Modal */}
+          {showExchange && (
               <div className="mt-4 bg-white/95 rounded-xl p-4 animate-fade-in relative z-20 text-stone-800 shadow-lg">
                   <div className="flex justify-between items-center mb-3 border-b border-stone-100 pb-2">
                       <h4 className="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-2">
-                          <Calculator size={14} /> 匯率換算
+                          <ArrowRightLeft size={14} /> 匯率換算
                       </h4>
-                      <button onClick={() => setShowCalculator(false)} className="text-stone-400 hover:text-stone-600"><X size={16} /></button>
+                      <button onClick={() => setShowExchange(false)} className="text-stone-400 hover:text-stone-600"><X size={16} /></button>
                   </div>
                   
                   <div className="flex items-center gap-2 mb-3">
@@ -454,8 +549,9 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
                           <label className="block text-[10px] font-bold text-stone-400 mb-1">匯率 (可修改)</label>
                           <input 
                               type="number" 
+                              step="0.1"
                               value={currentRate} 
-                              onChange={(e) => setCurrentRate(parseFloat(e.target.value))} 
+                              onChange={(e) => handleRateChange(e.target.value)} 
                               className="w-full bg-stone-50 border border-stone-200 rounded-lg px-2 py-2 text-sm font-mono text-stone-500 focus:outline-none focus:border-stone-400"
                           />
                       </div>
@@ -465,7 +561,7 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
                       <span className="text-xs font-bold text-stone-500">約合台幣</span>
                       <span className="text-lg font-bold font-mono text-stone-800">NT$ {calculatedTWD.toLocaleString()}</span>
                   </div>
-                  <p className="text-[10px] text-stone-400 mt-2 text-right">來源: 預設參考匯率 (可依實際換匯調整)</p>
+                  <p className="text-[10px] text-stone-400 mt-2 text-right">來源: 預設參考匯率 (修改後會自動儲存)</p>
               </div>
           )}
 
@@ -593,18 +689,21 @@ const ExpenseTracker = forwardRef<{ pushSettings: (settings: TripSettings) => Pr
                 {splitType !== 'self' && (
                     <div className="space-y-3">
                         <label className="block text-[10px] font-bold text-stone-400 uppercase">參與成員 ({selectedParticipants.length})</label>
-                        <div className="grid grid-cols-2 gap-2">
-                            {users.map(u => {
-                                const isSelected = selectedParticipants.includes(u.id);
-                                return (
-                                    <div key={u.id} className={`flex items-center justify-between p-2 rounded-xl border transition-all ${isSelected ? 'bg-stone-50 border-stone-200' : 'bg-white border-stone-100 opacity-60'}`}>
-                                        <button onClick={() => toggleParticipant(u.id)} className="flex items-center gap-2 flex-1"><div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-colors ${isSelected ? 'bg-stone-800 border-stone-800' : 'border-stone-300'}`}>{isSelected && <Check size={10} className="text-white" />}</div><span className="text-xs font-bold text-stone-700">{u.name}</span></button>
-                                        {splitType === 'individual' && isSelected && (
-                                            <div className="flex items-center gap-1 border-l border-stone-200 pl-2 ml-2"><span className="text-[10px] text-stone-400">$</span><input type="number" value={customAmounts[u.id] || ''} onChange={e => setCustomAmounts({...customAmounts, [u.id]: e.target.value})} className="w-16 bg-transparent text-xs font-mono text-stone-800 focus:outline-none" placeholder="0" /></div>
-                                        )}
-                                    </div>
-                                );
-                            })}
+                        {/* Dynamic grid columns based on split type: 1 column for individual to allow space for inputs */}
+                        <div className="max-h-52 overflow-y-auto no-scrollbar p-1 border border-stone-50 rounded-xl overscroll-contain">
+                            <div className={`grid gap-2 ${splitType === 'individual' ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                                {users.map(u => {
+                                    const isSelected = selectedParticipants.includes(u.id);
+                                    return (
+                                        <div key={u.id} className={`flex items-center justify-between p-2 rounded-xl border transition-all ${isSelected ? 'bg-stone-50 border-stone-200' : 'bg-white border-stone-100 opacity-60'}`}>
+                                            <button onClick={() => toggleParticipant(u.id)} className="flex items-center gap-2 flex-1"><div className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-colors ${isSelected ? 'bg-stone-800 border-stone-800' : 'border-stone-300'}`}>{isSelected && <Check size={10} className="text-white" />}</div><span className="text-xs font-bold text-stone-700">{u.name}</span></button>
+                                            {splitType === 'individual' && isSelected && (
+                                                <div className="flex items-center gap-1 border-l border-stone-200 pl-2 ml-2"><span className="text-[10px] text-stone-400">$</span><input type="number" value={customAmounts[u.id] || ''} onChange={e => setCustomAmounts({...customAmounts, [u.id]: e.target.value})} className="w-24 bg-transparent text-xs font-mono text-stone-800 focus:outline-none text-right" placeholder="0" /></div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 )}
